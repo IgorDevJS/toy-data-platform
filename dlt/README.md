@@ -76,6 +76,16 @@ Chaves relevantes:
   o pyiceberg (`uri`, `warehouse`).
 - `ICEBERG_CATALOG__ICEBERG_CATALOG_NAME` / `..._TYPE` — selecionam o catálogo
   que o dlt carrega (`raw`, `rest`).
+- `NORMALIZE__PARQUET_NORMALIZER__ADD_DLT_LOAD_ID=true` — grava em cada linha a
+  coluna `_dlt_load_id` (id da carga, um timestamp unix). Com dados em pandas/arrow o
+  dlt não a grava por padrão. O dbt usa essa coluna para medir o frescor das fontes
+  (`make dbt-freshness`).
+
+> **Migração única, para quem já tinha as tabelas raw antes dessa coluna:** o pyiceberg
+> não acrescenta uma coluna obrigatória (`NOT NULL`) a uma tabela Iceberg que já existe
+> (`ValueError: Incompatible change: cannot add required column: _dlt_load_id`). Apague
+> as tabelas no Trino (`DROP TABLE raw.raw_movies.<tabela>`) e rode o `make dlt-run` de
+> novo, que as recria a partir dos CSVs. Quem sobe a plataforma do zero não passa por isso.
 
 > A variável `ICEBERG_CATALOG__ICEBERG_CATALOG_CONFIG__URI` foi removida: o dlt
 > **ignora** sub-chaves de um campo de dicionário passadas por variável de
