@@ -222,8 +222,8 @@ services:
       superset-postgres:
         condition: service_healthy
 
-  # Registra o Cube como banco do Superset (protocolo Postgres) e publica o
-  # dashboard de exemplo. Roda uma vez após o Superset subir; é idempotente.
+  # Registra o Cube como banco do Superset (protocolo Postgres) e publica
+  # os dashboards. Roda uma vez após o Superset subir; é idempotente.
   # As credenciais da SQL API vêm de cube/.env — uma verdade só.
   superset-bootstrap:
     image: superset-semantico

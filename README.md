@@ -48,8 +48,8 @@ docker compose up -d
 ```
 
 Na primeira subida o Compose cria os buckets, registra os catálogos `raw`, `trusted`
-e `refined` no Lakekeeper, sobe o Superset (migrations + admin) e publica o dashboard
-de exemplo. Leva alguns minutos; o serviço que registra o Cube no Superset
+e `refined` no Lakekeeper, sobe o Superset (migrations + admin) e publica os dois
+dashboards. Leva alguns minutos; o serviço que registra o Cube no Superset
 (`superset-bootstrap`) roda uma vez e sai.
 
 ```bash
@@ -147,11 +147,29 @@ escrever cliente nenhum — bom para a aula.
 
 ### 5. Ver no Superset
 
-Abra <http://localhost:8088> (`admin` / `secret`) → **Dashboards** → *Camada
-semântica — títulos*: um gráfico de barras de nota média por país e uma tabela de
-medidas por tipo de título. O Superset enxerga o Cube como se fosse um banco
-Postgres (`titles_overview` = uma tabela, medidas e dimensões = colunas), então o
-builder normal funciona — mas não há SQL livre nem joins ad-hoc ([limitações](#por-que-o-superset-vê-um-banco)).
+Abra <http://localhost:8088> (`admin` / `secret`) → **Dashboards**. São dois, os
+dois criados pelo `superset-bootstrap` (`superset/bootstrap_semantic_layer.py`):
+
+- *Camada semântica — títulos* (dataset `titles_overview`): um gráfico de barras de
+  nota média por país e uma tabela de medidas por tipo de título.
+- *Crescimento do catálogo por gênero* (dataset `catalog_overview`): títulos
+  adicionados ao catálogo por ano e gênero, a nota média da crítica dos mesmos
+  gêneros por ano de entrada e uma tabela com o tamanho de cada gênero e quantos
+  títulos têm nota (a amostra da média). Recorte: de 2015 em diante, os 10 gêneros
+  com mais títulos.
+
+O Superset enxerga o Cube como se fosse um banco Postgres (cada view = uma tabela,
+medidas e dimensões = colunas), então o builder normal funciona — mas não há SQL
+livre nem joins ad-hoc ([limitações](#por-que-o-superset-vê-um-banco)).
+
+Gráfico, métrica e dashboard novos entram no bootstrap, e não pela interface: o que
+se cria clicando fica só no banco de metadados do Superset e some quando o volume é
+recriado. O bootstrap é idempotente (rodar de novo atualiza, não duplica) e
+sincroniza as colunas de cada dataset com o Cube a cada execução:
+
+```bash
+docker compose run --rm --no-deps superset-bootstrap
+```
 
 ### 6. Perguntar ao agente
 
@@ -223,7 +241,9 @@ Roteiro de 5 minutos para rodar com o stack no ar, antes de entrar na sala:
    ```
    → `Movie 1673 / 6.627` e `TV Show 140 / 6.597` (sem dimensão: `1813 / 6.625 / 322914`).
    Na `catalog_overview`, `SELECT MEASURE(count_catalog_titles), MEASURE(count_titles) FROM catalog_overview` → `8802 / 1813`.
-4. **Superset:** o dashboard *Camada semântica — títulos* abre com o gráfico de barras e a tabela preenchidos.
+4. **Superset:** o dashboard *Camada semântica — títulos* abre com o gráfico de barras e a tabela preenchidos;
+   o *Crescimento do catálogo por gênero* abre com as duas linhas e a tabela (International Movies `2746` títulos
+   de 2015 em diante, `307` com nota, `6.76`).
 5. **Agente:** `make mcp-demo` → `Japan — nota média 7.079 em 29 títulos`.
 
 Se os números não baterem, o problema é a etapa que não rodou: o Cube lê o `refined`,
@@ -289,7 +309,12 @@ com o builder padrão. As limitações: **(i)** as métricas precisam ser escrit
 `MEASURE(nome_da_medida)` (a forma canônica da SQL API; as colunas agregadas
 “naturais” não existem como colunas de banco); **(ii)** sem joins ad-hoc entre cubos —
 você consulta o que o modelo semântico expõe. Um dashboard que funcionava no Trino pode
-precisar de ajuste: as colunas que entraram no dataset são as **governadas**.
+precisar de ajuste: as colunas que entraram no dataset são as **governadas**;
+**(iii)** o "Series limit" (top N séries) só funciona se a métrica que ordena as
+séries for a mesma do gráfico. Com métricas diferentes (ex.: nota média das séries
+com mais títulos), o Cube recusa o `ORDER BY` por uma medida fora do `SELECT`, ou
+ignora em silêncio a subconsulta do top N. Por isso o dashboard do catálogo filtra
+uma lista fixa de gêneros (`TOP_GENRES` no bootstrap).
 
 ### País tem um balde nulo
 
