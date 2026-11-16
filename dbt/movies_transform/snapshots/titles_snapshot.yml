@@ -1,0 +1,21 @@
+snapshots:
+  - name: titles_snapshot
+    description: >
+      Histórico (SCD tipo 2) da nota da crítica de cada título do `fct_titles`. O
+      `fct_titles` é recriado a cada build (`on_table_exists: replace`) e a ingestão faz
+      `replace`, então sem o snapshot a nota antiga se perde. Cada mudança em `rating` ou
+      `votes` fecha a versão anterior (`dbt_valid_to`) e abre uma nova.
+    relation: ref('fct_titles')
+    config:
+      database: refined
+      schema: snapshots
+      unique_key: title_key
+      strategy: check
+      check_cols: [rating, votes]
+    columns:
+      - name: title_key
+        description: "Chave do título; junto com `dbt_valid_from`, identifica a versão."
+        tests:
+          - not_null
+      - name: dbt_valid_to
+        description: "Fim da validade da versão; nulo na versão atual."

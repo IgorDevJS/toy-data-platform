@@ -93,15 +93,25 @@ make dbt-build      # dbt build: seeds + models + testes de dados
 ```
 
 Isso monta `trusted.movies` / `trusted.delivery` e o modelo dimensional em
-`refined.ml`: o fato `fct_titles` (grão = **um título**), as dimensões `dim_year`,
-`dim_type` e as pontes `bridge_title_genre` / `bridge_title_country` (gênero e país
-são multi-valor). Os testes de dados do dbt (`unique`, `not_null`, `relationships` e
-as asserções de grão em `dbt/movies_transform/tests/`) rodam no mesmo comando.
+`refined.ml`: dois fatos no grão de **um título**, o `fct_titles` (os 1813 títulos com
+nota da crítica) e o `fct_catalog` (o catálogo inteiro, 8802 títulos, com o ano de
+entrada `added_year`), as dimensões `dim_year` (ano de lançamento e de entrada) e
+`dim_type`, e as pontes `bridge_title_genre` / `bridge_title_country` (gênero e país
+são multi-valor). Os testes de dados do dbt (`unique`, `not_null`, `relationships`, o
+contrato do `fct_catalog` e as asserções de grão em `dbt/movies_transform/tests/`) rodam
+no mesmo comando, e também o snapshot `refined.snapshots.titles_snapshot`, que guarda o
+histórico da nota de cada título (SCD tipo 2).
 
 ```bash
 docker compose exec trino trino --execute \
   "SELECT count(*), count(DISTINCT title_key) FROM refined.ml.fct_titles"
 # 1813  1813  -> o fato tem exatamente um título por linha
+```
+
+O frescor das fontes fica fora do `dbt build`:
+
+```bash
+make dbt-freshness  # dbt source freshness: idade da última carga do dlt (_dlt_load_id)
 ```
 
 ### 4. Consultar a camada semântica
@@ -200,7 +210,7 @@ Roteiro de 5 minutos para rodar com o stack no ar, antes de entrar na sala:
 1. **Ingerir** as duas fontes do dbt:
    `make dlt-run DLT_TABLE=netflix_titles` → `8807` linhas, e
    `make dlt-run DLT_TABLE=meta_critic` → `16290` linhas, em `raw.raw_movies`.
-2. **Transformar:** `make dbt-build` → `Done. PASS=45`, e `refined.ml.fct_titles` com `1813` linhas = `1813` chaves distintas.
+2. **Transformar:** `make dbt-build` → `Done. PASS=61`, `refined.ml.fct_titles` com `1813` linhas = `1813` chaves distintas e `refined.ml.fct_catalog` com `8802` = `8802`.
 3. **Camada semântica:**
    ```bash
    docker run --rm --network platform-net -e PGPASSWORD=cubecubecube postgres:16 \

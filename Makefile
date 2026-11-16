@@ -21,6 +21,17 @@ dbt-build: build
 	    $(DBT_IMAGE) \
 	    dbt build --target-path target/prod
 
+# Frescor das fontes (`dbt source freshness`): quanto tempo desde a última carga do dlt,
+# lido do `_dlt_load_id` de cada linha. Fica fora do `dbt build`, que não roda freshness.
+dbt-freshness: build
+	docker run --rm \
+	    -v $(PWD)/dbt/$(DBT_IMAGE):/usr/app/$(DBT_IMAGE) \
+	    --env-file $(PWD)/dbt/.env \
+	    --network $(NETWORK) \
+	    -w /usr/app/$(DBT_IMAGE) \
+	    $(DBT_IMAGE) \
+	    dbt source freshness --target-path target/prod
+
 # Slim CI: em dev, constrói só o que mudou desde o último `make dbt-build` (o manifest
 # de target/prod) e o que depende disso; o resto o `ref()` lê de prod (--defer),
 # mesmo que exista uma cópia velha em dev (--favor-state).
