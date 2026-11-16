@@ -192,16 +192,20 @@ resposta — é o *context engineering* da aula. Para ligar um cliente MCP de ve
 
 | Medida | Definição |
 | - | - |
-| `count_titles` | quantidade de títulos distintos |
+| `count_titles` | quantidade de títulos distintos com nota da crítica (1813) |
+| `count_catalog_titles` | quantidade de títulos do catálogo inteiro (8802) |
 | `avg_rating` | nota média da crítica |
 | `total_votes` | total de votos da crítica |
 
-Dimensões: `release_year`, `title_type`, `genre`, `country`.
+Dimensões: `release_year`, `year_added` (ano de entrada no catálogo), `title_type`,
+`genre`, `country`.
 
-O modelo semântico é YAML versionado em `cube/model/` — a medida é definida **uma vez
-só**, no cubo `titles`, e a view `titles_overview` é a fachada plana que o Superset e
-o agente consomem (`cube/README.md` tem o detalhe, inclusive de como fatiar por
-gênero/país sem inflar as medidas).
+O modelo semântico é YAML versionado em `cube/model/` — cada medida é definida **uma
+vez só**, no seu cubo (`titles` ou `catalog`), e as views são as fachadas planas que
+os consumidores usam: `titles_overview` (títulos com nota da crítica, a do Superset
+original e do agente) e `catalog_overview` (o catálogo inteiro, com a nota ao lado).
+O `cube/README.md` tem o detalhe, inclusive de como fatiar por gênero/país sem inflar
+as medidas.
 
 ## Smoke antes da aula
 
@@ -218,6 +222,7 @@ Roteiro de 5 minutos para rodar com o stack no ar, antes de entrar na sala:
      -c "SELECT title_type, MEASURE(count_titles), MEASURE(avg_rating) FROM titles_overview GROUP BY 1"
    ```
    → `Movie 1673 / 6.627` e `TV Show 140 / 6.597` (sem dimensão: `1813 / 6.625 / 322914`).
+   Na `catalog_overview`, `SELECT MEASURE(count_catalog_titles), MEASURE(count_titles) FROM catalog_overview` → `8802 / 1813`.
 4. **Superset:** o dashboard *Camada semântica — títulos* abre com o gráfico de barras e a tabela preenchidos.
 5. **Agente:** `make mcp-demo` → `Japan — nota média 7.079 em 29 títulos`.
 

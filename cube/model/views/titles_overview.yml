@@ -11,6 +11,7 @@ views:
       - join_path: titles
         includes:
           - release_year
+          - year_added
           - title_type
           - count_titles
           - avg_rating
