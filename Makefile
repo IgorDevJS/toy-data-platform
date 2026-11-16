@@ -59,6 +59,16 @@ dlt-run: dlt-build
 	    $(DLT_IMAGE) \
 	    python filesystem_pipeline.py -t $(DLT_TABLE)
 
+# --- Airflow (DAG movies_daily: dlt em paralelo → dbt source freshness → dbt build) ---
+
+# O Airflow não constrói imagem, só dispara containers: as duas imagens precisam existir
+# antes da DAG rodar, e precisam ser reconstruídas depois de mudar o dbt ou o dlt.
+airflow-images: build dlt-build
+
+# Dispara uma execução manual da DAG diária (além da agendada, @daily).
+airflow-run:
+	docker exec airflow_scheduler airflow dags trigger movies_daily
+
 dbt-shell:
 	docker run --rm -v $(PWD)/dbt/$(DBT_IMAGE):/usr/app/$(DBT_IMAGE) \
 	    -e DBT_TARGET=$(DBT_TARGET) \

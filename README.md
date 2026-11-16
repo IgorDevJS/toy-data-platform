@@ -119,6 +119,9 @@ O frescor das fontes fica fora do `dbt build`:
 make dbt-freshness  # dbt source freshness: idade da última carga do dlt (_dlt_load_id)
 ```
 
+As etapas 2 e 3 também rodam sozinhas, todo dia, pelo Airflow: ver
+[Rodar todo dia](#rodar-todo-dia-a-dag-movies_daily).
+
 ### 4. Consultar a camada semântica
 
 O Cube serve `titles_overview` (medidas × dimensões) por SQL API, no protocolo
@@ -197,11 +200,55 @@ O agente **descobre** o que existe antes de perguntar e devolve a chamada que ge
 resposta — é o *context engineering* da aula. Para ligar um cliente MCP de verdade
 (Claude Desktop, Cursor etc.) veja [`mcp/README.md`](mcp/README.md).
 
+## Rodar todo dia: a DAG `movies_daily`
+
+A DAG `airflow/dags/movies_daily.py` faz as etapas 2 e 3 sem ninguém digitar `make`:
+
+```
+ingest-imdb_top_1000 ─┐
+ingest-meta_critic ───┼─► dbt-source-freshness ─► dbt-build
+ingest-netflix_titles ┘
+```
+
+- **`@daily`** (meia-noite UTC), `catchup=False`, já nasce ligada
+  (`is_paused_upon_creation=False`): assim que o Airflow lê o arquivo, roda o último dia
+  agendado uma vez (sem recuperar os dias anteriores), e depois uma vez por dia.
+- As três ingestões rodam **em paralelo**; o `dbt source freshness` só deixa transformar
+  se a carga chegou na `raw`; o `dbt build` roda models, snapshot e testes (`PASS=61`).
+- `retries=2`, `retry_delay=2 min`: uma falha passageira (Trino reiniciando) não derruba
+  o dia; uma falha que persiste para no freshness e o `dbt-build` nem começa.
+- Idempotente: duas execuções seguidas deixam as mesmas contagens, porque o dlt faz
+  `replace`, os models são recriados e o snapshot só abre versão nova quando a nota muda.
+
+Cada tarefa é um container (`DockerOperator`) na rede `platform-net`, como no Makefile.
+O Airflow não constrói imagem, então as duas precisam existir, e ser reconstruídas depois
+de mudar o dbt ou o dlt:
+
+```bash
+make airflow-images   # = make build dlt-build: movies_transform e my-dlt-pipeline
+make airflow-run      # dispara uma execução manual, além da agendada
+```
+
+Detalhes que não aparecem no código da DAG:
+
+- A imagem `movies_transform` leva o projeto dbt dentro (`COPY` no `dbt/Dockerfile`). Um
+  bind mount não serviria: o Airflow fala com o Docker do **host** pelo socket, e o
+  caminho do mount seria o do host, não o de dentro do Airflow. Os alvos `make dbt-*`
+  continuam montando o projeto por cima, então o desenvolvimento lê os arquivos do host.
+- As variáveis vêm dos mesmos arquivos do Makefile: `dlt/.env.docker` e `dbt/.env` são
+  montados no Airflow em `/opt/airflow/env` e lidos pelo `env_file` do `DockerOperator`.
+- No Linux, o socket do Docker é do grupo `docker`, cujo GID muda de máquina para máquina.
+  Sem o `DOCKER_GID` no `.env` da raiz, as tarefas falham com `Permission denied`.
+
+Os logs de cada tarefa ficam no Airflow (<http://localhost:8080>, DAG `movies_daily`,
+aba *Grid*). A DAG antiga, `extract_movies` (`@once`, ingestões em fila), continua lá,
+pausada, e lê as variáveis do mesmo `dlt/.env.docker`.
+
 ## Serviços e endereços
 
 | Serviço | Papel | Endereço / credenciais |
 | - | - | - |
-| Airflow | orquestração (DAG `extract_movies` ingere os 3 CSVs) | <http://localhost:8080> — `admin` / `admin` |
+| Airflow | orquestração (DAG diária `movies_daily`: dlt → dbt) | <http://localhost:8080> — `admin` / `admin` |
 | MinIO | object storage dos arquivos Iceberg | console: <http://localhost:9001> — `root` / `rootrootroot` |
 | Lakekeeper | catálogo Iceberg (API REST; sem UI) | <http://localhost:8181> |
 | Trino | engine SQL sobre os três catálogos | <http://localhost:8081> |
@@ -278,7 +325,7 @@ Sem essa linha a gravação falha por resolução de nome/conexão. A explicaç�
 ## Estrutura do repositório
 
 ```
-airflow/      DAG de ingestão (DockerOperator na imagem do dlt)
+airflow/      DAGs: `movies_daily` (dlt → dbt, todo dia) e `extract_movies` (ingestão)
 cube/         modelo semântico em YAML (cube/model/) + README da camada semântica
 dbt/          projeto dbt: trusted (limpeza) e refined (fato + dimensões)
 dlt/          pipeline de ingestão dos CSVs (data/) para o Iceberg
@@ -347,7 +394,8 @@ server e o cliente `mc` (usado para criar os buckets).
 
 ## Personalizar
 
-- Novos fluxos: adicione DAGs em `airflow/dags` (a imagem do dlt é `my-dlt-pipeline`).
+- Novos fluxos: adicione DAGs em `airflow/dags` (imagens `my-dlt-pipeline` e
+  `movies_transform`; `env_file="dlt.env"` ou `"dbt.env"`, como na `movies_daily`).
 - Novos dados: solte o CSV em `dlt/data/` e rode `make dlt-run DLT_TABLE=<nome>`; depois
   declare a tabela como *source* no dbt (`dbt/movies_transform/models/trusted/`).
 - Novos modelos dbt: `make dbt-shell` abre um shell na imagem com o projeto montado
@@ -355,7 +403,8 @@ server e o cliente `mc` (usado para criar os buckets).
 - Novas métricas/dimensões: edite `cube/model/` e reinicie o serviço (`docker compose
   restart cube`).
 - Contas e senhas locais: `airflow/.env`, `trino/.env`, `dlt/.env.docker`,
-  `dbt/.env`, `cube/.env` (todas com um `.sample`/par correspondente).
+  `dbt/.env`, `cube/.env` (todas com um `.sample`/par correspondente). O `.env` da raiz
+  (`DOCKER_GID`) é da máquina e fica fora do git.
 
 ## Contribuindo
 

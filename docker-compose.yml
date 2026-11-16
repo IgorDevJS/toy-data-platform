@@ -21,6 +21,10 @@ x-airflow-common:
     - airflow-plugins:/opt/airflow/plugins
     - airflow-config:/opt/airlfow/airflow.cfg
     - /var/run/docker.sock:/var/run/docker.sock
+    # Variáveis dos containers que as DAGs disparam: uma fonte só, lida pelo
+    # `env_file` do DockerOperator (procurado no `template_searchpath` da DAG).
+    - ./dlt/.env.docker:/opt/airflow/env/dlt.env:ro
+    - ./dbt/.env:/opt/airflow/env/dbt.env:ro
   depends_on:
     - postgres
   # O DockerOperator usa o socket do Docker do host. No Docker Desktop ele é do
