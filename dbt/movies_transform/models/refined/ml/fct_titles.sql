@@ -26,6 +26,8 @@ select
     n.title,
     n.release_year as year_key,
     n.type as type_key,
+    -- ano em que o título entrou no catálogo, para fatiar a nota pelo ano de entrada
+    year(n.date_added) as added_year,
     c.rating,
     c.no_of_persons_voted as votes,
     try_cast(

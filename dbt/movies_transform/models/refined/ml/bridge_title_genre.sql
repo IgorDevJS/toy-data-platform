@@ -5,14 +5,16 @@
 -- fatiada por gênero conta cada título uma vez por gênero que ele tem, e nunca duas
 -- vezes pelo mesmo gênero.
 --
--- A ponte parte do fato (`fct_titles`): um gênero só interessa se o título está no fato,
--- senão a ponte teria títulos que nenhuma medida alcança.
+-- A ponte parte do catálogo inteiro (`fct_catalog`), e não só dos títulos com nota:
+-- assim a mesma regra serve aos dois fatos. O `fct_titles` é um subconjunto do catálogo,
+-- e quem consulta a partir dele (o cubo `titles`) só alcança os pares dos seus títulos,
+-- porque o join parte do fato.
 
 select
     f.title_key,
     trim(g.genre) as genre_key,
     f.title_key || '|' || trim(g.genre) as title_genre_key
-from {{ ref('fct_titles') }} f
+from {{ ref('fct_catalog') }} f
 inner join {{ ref('int_titles_attributes') }} t on t.title_key = f.title_key
 cross join unnest(split(t.listed_in, ',')) as g (genre)
 where trim(g.genre) <> ''
