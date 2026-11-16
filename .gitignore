@@ -11,3 +11,6 @@ logs/
 .scratch/
 docs/specs/
 progress.txt
+
+# variáveis de interpolação do compose desta máquina (ex.: DOCKER_GID)
+/.env

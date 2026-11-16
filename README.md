@@ -44,8 +44,13 @@ container** e por que o **Cube lê o Trino** em vez de os consumidores lerem o T
 ```bash
 git clone https://github.com/lorransr/toy-data-platform.git
 cd toy-data-platform
+echo "DOCKER_GID=$(stat -c %g /var/run/docker.sock)" > .env   # só no Linux, uma vez
 docker compose up -d
 ```
+
+A linha do `.env` deixa o Airflow usar o Docker do host, o que as DAGs precisam (ver
+[Rodar todo dia](#rodar-todo-dia-a-dag-movies_daily)). No Docker Desktop (Mac/Windows),
+pule essa linha.
 
 Na primeira subida o Compose cria os buckets, registra os catálogos `raw`, `trusted`
 e `refined` no Lakekeeper, sobe o Superset (migrations + admin) e publica os dois
