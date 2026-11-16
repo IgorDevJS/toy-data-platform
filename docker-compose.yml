@@ -208,6 +208,16 @@ services:
       - setup.sh
     ports:
       - '8088:8088'
+    # O healthcheck herdado da imagem (30s × 3, sem start_period) desiste em ~90s,
+    # e no primeiro boot as migrations do metadata DB levam mais que isso: o
+    # Superset ficava `unhealthy` e o `superset-bootstrap` não rodava. Falhas
+    # dentro do start_period não contam; o primeiro sucesso já marca `healthy`.
+    healthcheck:
+      test: [ "CMD-SHELL", "/app/docker/docker-healthcheck.sh" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 300s
     depends_on:
       superset-postgres:
         condition: service_healthy
