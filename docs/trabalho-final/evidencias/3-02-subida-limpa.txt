@@ -1,0 +1,92 @@
+# Fase 3 · docker compose up limpo do Superset (2026-11-16)
+# Backup do metadata DB (pg_dump), depois:
+#   docker compose rm -sf superset superset-bootstrap superset-postgres
+#   docker volume rm toy-data-platform_superset-data
+#   docker compose up -d superset-bootstrap
+
+## 1ª tentativa (compose sem healthcheck próprio no superset)
+ Container toy-data-platform-superset-1  Starting
+ Container toy-data-platform-superset-1  Started
+ Container toy-data-platform-cube-1  Waiting
+ Container toy-data-platform-superset-1  Waiting
+ Container toy-data-platform-cube-1  Healthy
+ Container toy-data-platform-superset-1  Error
+dependency failed to start: container toy-data-platform-superset-1 is unhealthy
+docker compose up -d superset-bootstrap  0,38s user 0,10s system 0% cpu 1:38,60 total
+
+$ docker inspect -f '{{json .Config.Healthcheck}}' superset-semantico
+{"Test":["CMD-SHELL","/app/docker/docker-healthcheck.sh"]}      # herdado da imagem: 30s × 3, sem start_period
+
+$ docker compose logs -t superset | grep -m1 Listening
+2026-11-16T22:13:10Z ... [INFO] Listening at: http://0.0.0.0:8088     # o container subiu às 22:11:36: ~94 s de migrations
+
+## correção (docker-compose.yml, serviço superset)
+    healthcheck:
+      test: [ "CMD-SHELL", "/app/docker/docker-healthcheck.sh" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 300s
+
+## 2ª tentativa, volume apagado de novo
+ Volume toy-data-platform_superset-data  Creating
+ Volume toy-data-platform_superset-data  Created
+ Container toy-data-platform-trino-1  Running
+ Container toy-data-platform-cube-1  Running
+ Container toy-data-platform-superset-postgres-1  Creating
+ Container toy-data-platform-superset-postgres-1  Created
+ Container toy-data-platform-superset-1  Creating
+ Container toy-data-platform-superset-1  Created
+ Container toy-data-platform-superset-bootstrap-1  Creating
+ Container toy-data-platform-superset-bootstrap-1  Created
+ Container toy-data-platform-superset-postgres-1  Starting
+ Container toy-data-platform-superset-postgres-1  Started
+ Container toy-data-platform-superset-postgres-1  Waiting
+ Container toy-data-platform-superset-postgres-1  Healthy
+ Container toy-data-platform-superset-1  Starting
+ Container toy-data-platform-superset-1  Started
+ Container toy-data-platform-cube-1  Waiting
+ Container toy-data-platform-superset-1  Waiting
+ Container toy-data-platform-cube-1  Healthy
+ Container toy-data-platform-superset-1  Healthy
+ Container toy-data-platform-superset-bootstrap-1  Starting
+ Container toy-data-platform-superset-bootstrap-1  Started
+docker compose up -d superset-bootstrap  0,43s user 0,15s system 0% cpu 2:11,72 total
+
+## log do superset-bootstrap (exit 0)
+database: criada id=1 (postgresql+psycopg2://cube:cubecubecube@cube:15432/cube)
+dataset titles_overview: criado id=1
+dataset titles_overview: coluna interna removida (__user)
+dataset titles_overview: coluna interna removida (__cubeJoinField)
+dataset catalog_overview: criado id=2
+dataset catalog_overview: coluna interna removida (__user)
+dataset catalog_overview: coluna interna removida (__cubeJoinField)
+dashboard: criado id=1 (Camada semântica — títulos)
+chart: criado id=1 (Nota média por país)
+chart: criado id=2 (Medidas por tipo de título)
+dashboard: layout atualizado id=1 (Camada semântica — títulos)
+pronto: http://superset:8088/superset/dashboard/1/
+dashboard: criado id=2 (Crescimento do catálogo por gênero)
+chart: criado id=3 (Títulos adicionados por ano e gênero)
+chart: criado id=4 (Nota média da crítica por gênero e ano de entrada)
+chart: criado id=5 (Tamanho do catálogo e amostra com nota, por gênero)
+dashboard: layout atualizado id=2 (Crescimento do catálogo por gênero)
+pronto: http://superset:8088/superset/dashboard/2/
+(login: admin)
+
+## inventário depois da subida limpa
+dashboards:
+  id=1 Camada semântica — títulos
+  id=2 Crescimento do catálogo por gênero
+charts:
+  id=1 Nota média por país [echarts_timeseries_bar] dataset=public.titles_overview
+  id=2 Medidas por tipo de título [table] dataset=public.titles_overview
+  id=3 Títulos adicionados por ano e gênero [echarts_timeseries_line] dataset=public.catalog_overview
+  id=4 Nota média da crítica por gênero e ano de entrada [echarts_timeseries_line] dataset=public.catalog_overview
+  id=5 Tamanho do catálogo e amostra com nota, por gênero [table] dataset=public.catalog_overview
+datasets:
+  id=1 titles_overview colunas=8 métricas: count_titles=MEASURE(count_titles), avg_rating=MEASURE(avg_rating), total_votes=MEASURE(total_votes)
+  id=2 catalog_overview colunas=10 métricas: count_catalog_titles=MEASURE(count_catalog_titles), count_titles=MEASURE(count_titles), avg_rating=MEASURE(avg_rating), total_votes=MEASURE(total_votes)
+
+## diff com o inventário de antes de apagar o volume
+(idêntico: mesmos objetos, mesmos ids)

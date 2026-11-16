@@ -1,0 +1,255 @@
+# Primeira subida (docker compose up -d) em 2026-11-13 ~17:15 — falhou por healthcheck do lakekeeper_db
+# Trecho do docker-compose.yml:
+#   
+#     lakekeeper_db:
+#       image: postgres:16
+#       environment:
+#         - POSTGRES_USER=postgres
+#         - POSTGRES_PASSWORD=postgres
+#         - POSTGRES_DB=postgres
+#       healthcheck:
+#         test: [ "CMD-SHELL", "pg_isready -U postgres -p 5432 -d postgres" ]
+#         interval: 2s
+#         timeout: 10s
+#         retries: 2
+#         start_period: 10s
+
+ createbuckets Pulling 
+ cube Pulling 
+ superset-bootstrap Pulling 
+ create-warehouse Pulling 
+ postgres Pulling 
+ lakekeeper Pulling 
+ lakekeeper_db Pulling 
+ superset-postgres Pulling 
+ trino Pulling 
+ migrate Pulling 
+ superset Pulling 
+ minio Pulling 
+ bootstrap-lakekeeper Pulling 
+ superset Warning pull access denied for superset-semantico, repository does not exist or may require 'docker login': denied: requested access to the resource is denied
+ superset-bootstrap Warning pull access denied for superset-semantico, repository does not exist or may require 'docker login': denied: requested access to the resource is denied
+ 69082a0418af Waiting 
+ 0fb7687a4a75 Waiting 
+ 5243dc7e3601 Waiting 
+ 80bd503ad813 Waiting 
+ 621b1503e421 Waiting 
+ a32c77839bef Waiting 
+ 2230cac242f1 Waiting 
+ 6d06773db9a6 Waiting 
+ 37fb86c2a767 Waiting 
+ e9b9c168b556 Waiting 
+ 373818e56554 Waiting 
+ 0b80e0833f2d Waiting 
+ 6f1f66ad722a Waiting 
+ d8948f3622f7 Waiting 
+ 6a7048238f16 Waiting 
+ ea97cbaeb613 Waiting 
+ 3dcaae3150c1 Waiting 
+ 8fe89564ad07 Waiting 
+ 0c67d4a9f067 Waiting 
+ 5dd91dbc2342 Waiting 
+ d38145328f88 Waiting 
+ c21dabdd3f40 Waiting 
+ 2230cac242f1 Waiting 
+ 6d06773db9a6 Waiting 
+ 69082a0418af Waiting 
+ 0fb7687a4a75 Waiting 
+ 5243dc7e3601 Waiting 
+ 80bd503ad813 Waiting 
+ 621b1503e421 Waiting 
+ a32c77839bef Waiting 
+ c21dabdd3f40 Waiting 
+ d8948f3622f7 Waiting 
+ 37fb86c2a767 Waiting 
+ e9b9c168b556 Waiting 
+ 373818e56554 Waiting 
+ 0b80e0833f2d Waiting 
+ 6f1f66ad722a Waiting 
+ 8fe89564ad07 Waiting 
+ 6a7048238f16 Waiting 
+ ea97cbaeb613 Waiting 
+ 3dcaae3150c1 Waiting 
+ 5dd91dbc2342 Waiting 
+ 0c67d4a9f067 Waiting 
+ d38145328f88 Waiting 
+ 6f1f66ad722a Waiting 
+ e9b9c168b556 Waiting 
+ c21dabdd3f40 Waiting 
+ d8948f3622f7 Waiting 
+ 37fb86c2a767 Waiting 
+ 6a7048238f16 Waiting 
+ 373818e56554 Waiting 
+ ea97cbaeb613 Waiting 
+ 0c67d4a9f067 Waiting 
+ 5dd91dbc2342 Waiting 
+ 3dcaae3150c1 Waiting 
+ d38145328f88 Waiting 
+ 8fe89564ad07 Waiting 
+ 0b80e0833f2d Waiting 
+ 82f04ca014ec Waiting 
+ 17bfc2cabbaa Waiting 
+ ecc510c1e359 Waiting 
+ 92e5108e7149 Waiting 
+ 342851af33a6 Waiting 
+ ae7f77214d73 Waiting 
+ 68a475a78318 Waiting 
+ 1d01f58edc83 Waiting 
+ ce28ba3ac7da Waiting 
+ 0da0c9ca0b50 Waiting 
+ d61307cd0834 Waiting 
+ 20efe5725947 Waiting 
+ a73c3775329a Waiting 
+ db3ffa205490 Waiting 
+ 76790e7f0590 Waiting 
+ 63dea1bee099 Waiting 
+ 57801bb4975f Waiting 
+ 38f50e2e7b92 Waiting 
+ eb9f76fd8a45 Waiting 
+ e7d16decbeb9 Waiting 
+ e1575b70b299 Waiting 
+ 78cc1b8b450d Waiting 
+ 90d4052e31dd Waiting 
+ a4dd463d5ee2 Waiting 
+ 9b5ffe067d17 Waiting 
+ 76790e7f0590 Waiting 
+ 17bfc2cabbaa Waiting 
+ 82f04ca014ec Waiting 
+ createbuckets Pulled 
+ minio Pulled 
+ postgres Pulled 
+ superset-postgres Pulled 
+ lakekeeper_db Pulled 
+ create-warehouse Pulled 
+ bootstrap-lakekeeper Pulled 
+ migrate Pulled 
+ lakekeeper Pulled 
+ cube Pulled 
+ trino Pulled 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ toy-data-platform-airflow-webserver  Built
+ toy-data-platform-airflow-init  Built
+ toy-data-platform-airflow-dag-processor  Built
+ superset-semantico  Built
+ toy-data-platform-airflow-scheduler  Built
+ superset-semantico  Built
+ Network platform-net  Creating
+ Network platform-net  Created
+ Volume toy-data-platform_airflow-plugins  Creating
+ Volume toy-data-platform_airflow-plugins  Created
+ Volume toy-data-platform_airflow-config  Creating
+ Volume toy-data-platform_airflow-config  Created
+ Volume toy-data-platform_lakekeeper-data  Creating
+ Volume toy-data-platform_lakekeeper-data  Created
+ Volume toy-data-platform_minio-data  Creating
+ Volume toy-data-platform_minio-data  Created
+ Volume toy-data-platform_superset-data  Creating
+ Volume toy-data-platform_superset-data  Created
+ Volume toy-data-platform_airflow-data  Creating
+ Volume toy-data-platform_airflow-data  Created
+ Volume toy-data-platform_airflow-logs  Creating
+ Volume toy-data-platform_airflow-logs  Created
+ Container toy-data-platform-lakekeeper_db-1  Creating
+ Container toy-data-platform-superset-postgres-1  Creating
+ Container toy-data-platform-postgres-1  Creating
+ Container toy-data-platform-minio-1  Creating
+ Container toy-data-platform-trino-1  Creating
+ Container toy-data-platform-trino-1  Created
+ Container toy-data-platform-cube-1  Creating
+ Container toy-data-platform-minio-1  Created
+ Container toy-data-platform-superset-postgres-1  Created
+ Container toy-data-platform-createbuckets-1  Creating
+ Container toy-data-platform-superset-1  Creating
+ Container toy-data-platform-postgres-1  Created
+ Container airflow_init  Creating
+ Container toy-data-platform-lakekeeper_db-1  Created
+ Container toy-data-platform-migrate-1  Creating
+ Container toy-data-platform-cube-1  Created
+ Container airflow_init  Created
+ Container airflow_scheduler  Creating
+ Container airflow_dag_processor  Creating
+ Container airflow_webserver  Creating
+ Container toy-data-platform-migrate-1  Created
+ Container toy-data-platform-lakekeeper-1  Creating
+ Container toy-data-platform-createbuckets-1  Created
+ Container toy-data-platform-superset-1  Created
+ Container toy-data-platform-superset-bootstrap-1  Creating
+ Container toy-data-platform-superset-bootstrap-1  Created
+ Container toy-data-platform-lakekeeper-1  Created
+ Container toy-data-platform-bootstrap-lakekeeper-1  Creating
+ Container airflow_webserver  Created
+ Container airflow_scheduler  Created
+ Container airflow_dag_processor  Created
+ Container toy-data-platform-bootstrap-lakekeeper-1  Created
+ Container toy-data-platform-create-warehouse-1  Creating
+ Container toy-data-platform-create-warehouse-1  Created
+ Container toy-data-platform-postgres-1  Starting
+ Container toy-data-platform-superset-postgres-1  Starting
+ Container toy-data-platform-trino-1  Starting
+ Container toy-data-platform-minio-1  Starting
+ Container toy-data-platform-lakekeeper_db-1  Starting
+ Container toy-data-platform-trino-1  Started
+ Container toy-data-platform-cube-1  Starting
+ Container toy-data-platform-minio-1  Started
+ Container toy-data-platform-createbuckets-1  Starting
+ Container toy-data-platform-lakekeeper_db-1  Started
+ Container toy-data-platform-superset-postgres-1  Started
+ Container toy-data-platform-postgres-1  Started
+ Container toy-data-platform-cube-1  Started
+ Container toy-data-platform-createbuckets-1  Started
+ Container toy-data-platform-lakekeeper_db-1  Error
+ Container toy-data-platform-postgres-1  Healthy
+ Container airflow_init  Starting
+ Container toy-data-platform-superset-postgres-1  Healthy
+ Container toy-data-platform-superset-1  Starting
+ Container airflow_init  Started
+ Container toy-data-platform-superset-1  Started
+dependency failed to start: container toy-data-platform-lakekeeper_db-1 is unhealthy

@@ -1,0 +1,68 @@
+# Fase 4 · Retries: o Trino parado no meio da DAG (retries=2, retry_delay=2 min)
+# 2026-11-16 19:56:22
+
+## Caso 1: o Trino fica parado (docker compose stop trino) a execução inteira
+# As ingestões não usam o Trino (o dlt grava no MinIO e registra no Lakekeeper) e passam.
+# O dbt-source-freshness falha 3 vezes (1 + 2 retries, a 2 min uma da outra);
+# o dbt-build fica upstream_failed e nem começa: nada é transformado com a fonte inacessível.
+$ airflow tasks states-for-dag-run movies_daily manual__2026-11-16T22:43:43.124947+00:00
+dag_id       | logical_date | task_id               | state           | start_date                       | end_date                        
+=============+==============+=======================+=================+==================================+=================================
+movies_daily |              | ingest-imdb_top_1000  | success         | 2026-11-16T22:43:44.269081+00:00 | 2026-11-16T22:44:08.198666+00:00
+movies_daily |              | ingest-meta_critic    | success         | 2026-11-16T22:43:44.176174+00:00 | 2026-11-16T22:44:08.623413+00:00
+movies_daily |              | ingest-netflix_titles | success         | 2026-11-16T22:43:44.217444+00:00 | 2026-11-16T22:44:08.332044+00:00
+movies_daily |              | dbt-build             | upstream_failed | 2026-11-16T22:49:04.467212+00:00 | 2026-11-16T22:49:04.467212+00:00
+movies_daily |              | dbt-source-freshness  | failed          | 2026-11-16T22:48:43.583267+00:00 | 2026-11-16T22:49:04.019838+00:00
+                                                                                                                                           
+$ (log das 3 tentativas do dbt-source-freshness, linhas de erro)
+== attempt=1.log
+22:44:10 info Starting docker container from image movies_transform:latest
+22:44:25 info 22:44:25  [ERROR]: Encountered an error:
+22:44:25 info   failed to execute: HTTPConnectionPool(host='trino', port=8080): Max retries exceeded with url: /v1/statement (Caused by NameResolutionError("HTTPConnection(host='trino', port=8080): Failed to resolve 'trino' ([Errno -3] Temporar
+22:44:26 error Task failed with exception
+== attempt=2.log
+22:46:27 info Starting docker container from image movies_transform:latest
+22:46:40 info 22:46:40  [ERROR]: Encountered an error:
+22:46:40 info   failed to execute: HTTPConnectionPool(host='trino', port=8080): Max retries exceeded with url: /v1/statement (Caused by NameResolutionError("HTTPConnection(host='trino', port=8080): Failed to resolve 'trino' ([Errno -3] Temporar
+22:46:42 error Task failed with exception
+== attempt=3.log
+22:48:43 info Starting docker container from image movies_transform:latest
+22:48:57 info 22:48:57  [ERROR]: Encountered an error:
+22:48:57 info   failed to execute: HTTPConnectionPool(host='trino', port=8080): Max retries exceeded with url: /v1/statement (Caused by NameResolutionError("HTTPConnection(host='trino', port=8080): Failed to resolve 'trino' ([Errno -3] Temporar
+22:48:59 error Task failed with exception
+
+## Caso 2: o Trino volta durante o retry_delay (docker compose start trino às 19:51:55)
+# 1ª tentativa falha; a 2ª, 2 min depois, passa; o dbt-build roda em seguida.
+$ airflow tasks states-for-dag-run movies_daily manual__2026-11-16T22:51:02.923508+00:00
+dag_id       | logical_date | task_id               | state   | start_date                       | end_date                        
+=============+==============+=======================+=========+==================================+=================================
+movies_daily |              | dbt-build             | success | 2026-11-16T22:54:20.622538+00:00 | 2026-11-16T22:55:54.799427+00:00
+movies_daily |              | ingest-imdb_top_1000  | success | 2026-11-16T22:51:03.763957+00:00 | 2026-11-16T22:51:26.480736+00:00
+movies_daily |              | ingest-meta_critic    | success | 2026-11-16T22:51:03.647218+00:00 | 2026-11-16T22:51:26.945946+00:00
+movies_daily |              | dbt-source-freshness  | success | 2026-11-16T22:53:45.452602+00:00 | 2026-11-16T22:54:20.264956+00:00
+movies_daily |              | ingest-netflix_titles | success | 2026-11-16T22:51:03.699571+00:00 | 2026-11-16T22:51:26.475436+00:00
+                                                                                                                                   
+$ (log das tentativas do dbt-source-freshness)
+== attempt=1.log
+22:51:27 info Starting docker container from image movies_transform:latest
+22:51:42 info 22:51:42  [ERROR]: Encountered an error:
+22:51:42 info   failed to execute: HTTPConnectionPool(host='trino', port=8080): Max retries exceeded with url: /v1/statement (Caused by NameResolutionError("HTTPConnection(host='trino', port=8080): Failed to resolve 'trino' ([Errno -3] Temporar
+22:51:45 error Task failed with exception
+== attempt=2.log
+22:53:45 info Starting docker container from image movies_transform:latest
+22:54:17 info 22:54:17  1 of 2 PASS freshness of raw.meta_critic ....................................... [PASS in 7.96s]
+22:54:18 info 22:54:18  2 of 2 PASS freshness of raw.netflix_titles .................................... [PASS in 1.00s]
+22:54:18 info 22:54:18  Done.
+$ (fim do log do dbt-build)
+== attempt=1.log
+22:55:52 info 22:55:52  Finished running 1 incremental model, 1 seed, 1 snapshot, 10 table models, 48 data tests in 0 hours 1 minutes and 18.13 seconds (78.13s).
+22:55:52 info 22:55:52  Done. PASS=61 WARN=0 ERROR=0 SKIP=0 NO-OP=0 REUSED=0 TOTAL=61
+
+$ airflow dags list-runs movies_daily
+dag_id       | run_id                                   | state   | run_after                        | logical_date              | start_date                       | end_date                        
+=============+==========================================+=========+==================================+===========================+==================================+=================================
+movies_daily | manual__2026-11-16T22:51:02.923508+00:00 | success | 2026-11-16T22:51:02.923508+00:00 |                           | 2026-11-16T22:51:03.448727+00:00 | 2026-11-16T22:55:55.028815+00:00
+movies_daily | manual__2026-11-16T22:43:43.124947+00:00 | failed  | 2026-11-16T22:43:43.124947+00:00 |                           | 2026-11-16T22:43:43.879284+00:00 | 2026-11-16T22:49:05.534614+00:00
+movies_daily | manual__2026-11-16T22:41:29.904892+00:00 | success | 2026-11-16T22:41:29.904892+00:00 |                           | 2026-11-16T22:41:29.965610+00:00 | 2026-11-16T22:42:45.005712+00:00
+movies_daily | scheduled__2026-11-16T00:00:00+00:00     | success | 2026-11-16T00:00:00+00:00        | 2026-11-16T00:00:00+00:00 | 2026-11-16T22:39:03.232637+00:00 | 2026-11-16T22:40:47.036953+00:00
+                                                                                                                                                                                                      

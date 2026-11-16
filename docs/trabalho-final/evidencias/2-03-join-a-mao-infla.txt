@@ -1,0 +1,50 @@
+# Fase 2 · O join à mão com a ponte de gênero infla; o Cube não.
+# Pergunta: quantos títulos entraram no catálogo em cada ano, e com que nota média?
+
+# 1) Errado: join do fato com a ponte e count(*)/avg direto. Cada título conta uma vez por gênero.
+$ trino --execute "select c.added_year, count(*) titulos_errado, count(distinct c.title_key) titulos_certo, round(avg(t.rating), 3) nota_errada from refined.ml.fct_catalog c join refined.ml.bridge_title_genre g on g.title_key = c.title_key left join refined.ml.fct_titles t on t.title_key = c.title_key where c.added_year between 2015 and 2021 group by 1 order by 1"  (2026-11-16 18:37:59)
+ added_year | titulos_errado | titulos_certo | nota_errada 
+------------+----------------+---------------+-------------
+       2015 |            152 |            82 |       6.453 
+       2016 |            855 |           428 |       6.468 
+       2017 |           2593 |          1188 |       6.651 
+       2018 |           3663 |          1646 |       6.692 
+       2019 |           4504 |          2015 |       6.686 
+       2020 |           4162 |          1879 |       6.558 
+       2021 |           3268 |          1498 |       6.736 
+(7 rows)
+
+# 2) Certo, à mão: sem a ponte (ou com count distinct). A nota é a média por título.
+$ trino --execute "select c.added_year, count(*) titulos, round(avg(t.rating), 3) nota from refined.ml.fct_catalog c left join refined.ml.fct_titles t on t.title_key = c.title_key where c.added_year between 2015 and 2021 group by 1 order by 1"  (2026-11-16 18:38:06)
+ added_year | titulos | nota  
+------------+---------+-------
+       2015 |      82 | 6.463 
+       2016 |     428 | 6.404 
+       2017 |    1188 | 6.598 
+       2018 |    1646 | 6.673 
+       2019 |    2015 | 6.646 
+       2020 |    1879 | 6.523 
+       2021 |    1498 | 6.729 
+(7 rows)
+
+# 3) Cube, filtrando por dois gêneros sem agrupar por gênero: um título que é Drama e Comédia conta uma vez.
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT year_added, MEASURE(count_catalog_titles) AS titulos, round(MEASURE(avg_rating)::numeric, 3) AS nota FROM catalog_overview WHERE year_added = 2019 AND genre IN ('Dramas', 'Comedies') GROUP BY 1"  (2026-11-16 18:38:10)
+ year_added | titulos | nota 
+------------+---------+------
+       2019 |     863 | 6.75
+(1 linha)
+
+
+# 4) O mesmo recorte à mão, errado (count(*)) e certo (count distinct; média por título).
+$ trino --execute "select count(*) titulos_errado, count(distinct c.title_key) titulos_certo, round(avg(t.rating), 3) nota_errada from refined.ml.fct_catalog c join refined.ml.bridge_title_genre g on g.title_key = c.title_key left join refined.ml.fct_titles t on t.title_key = c.title_key where c.added_year = 2019 and g.genre_key in ('Dramas', 'Comedies')"  (2026-11-16 18:38:15)
+ titulos_errado | titulos_certo | nota_errada 
+----------------+---------------+-------------
+            984 |           863 |       6.769 
+(1 row)
+
+$ trino --execute "select count(*) titulos, round(avg(t.rating), 3) nota from refined.ml.fct_catalog c left join refined.ml.fct_titles t on t.title_key = c.title_key where c.added_year = 2019 and c.title_key in (select title_key from refined.ml.bridge_title_genre where genre_key in ('Dramas', 'Comedies'))"  (2026-11-16 18:38:20)
+ titulos | nota 
+---------+------
+     863 | 6.75 
+(1 row)
+

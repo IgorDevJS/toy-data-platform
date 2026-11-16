@@ -1,0 +1,95 @@
+# Fase 3 · Dashboard × SQL API do Cube (2026-11-16)
+# 'dash' = dados que o dashboard 'Crescimento do catálogo por gênero' recebeu de /api/v1/chart/data
+#          (gráficos 3 e 4, capturados no Chrome headless).
+# 'cube' = a mesma pergunta escrita direto na SQL API do Cube:
+#   SELECT year_added, genre, MEASURE(count_catalog_titles), MEASURE(count_titles), MEASURE(avg_rating)
+#   FROM catalog_overview WHERE year_added >= 2015 AND genre IN (<10 gêneros>) GROUP BY 1, 2
+# 'com nota' = count_titles: quantos títulos sustentam a média de cada ponto.
+# A Fase 2 (2-02) já mostrou que o Cube bate com o SQL escrito à mão no Trino.
+
+gênero                     ano  catálogo     com   nota da crítica
+                                dash  cube  nota  dash   cube
+Action & Adventure         2015      2     2     1   6.200  6.200  ok
+Action & Adventure         2016     18    18     7   6.443  6.443  ok
+Action & Adventure         2017     97    97    23   6.755  6.755  ok
+Action & Adventure         2018    173   173    42   6.250  6.250  ok
+Action & Adventure         2019    202   202    97   6.721  6.721  ok
+Action & Adventure         2020    170   170    81   6.512  6.512  ok
+Action & Adventure         2021    196   196   100   6.648  6.648  ok
+Children & Family Movies   2015     11    11     0                 ok
+Children & Family Movies   2016     20    20     2   6.100  6.100  ok
+Children & Family Movies   2017     78    78     7   7.483  7.483  ok
+Children & Family Movies   2018     85    85    16   7.050  7.050  ok
+Children & Family Movies   2019    147   147    46   6.444  6.444  ok
+Children & Family Movies   2020    170   170    52   6.278  6.278  ok
+Children & Family Movies   2021    122   122    30   6.783  6.783  ok
+Comedies                   2015     12    12     2   5.700  5.700  ok
+Comedies                   2016     48    48    14   5.846  5.846  ok
+Comedies                   2017    177   177    43   6.531  6.531  ok
+Comedies                   2018    295   295    43   6.664  6.664  ok
+Comedies                   2019    420   420   140   6.516  6.516  ok
+Comedies                   2020    416   416   131   6.355  6.355  ok
+Comedies                   2021    299   299   111   6.557  6.557  ok
+Documentaries              2015     13    13     2   7.150  7.150  ok
+Documentaries              2016     68    68    23   6.513  6.513  ok
+Documentaries              2017    206   206    40   6.742  6.742  ok
+Documentaries              2018    167   167    27   6.900  6.900  ok
+Documentaries              2019    188   188    24   6.795  6.795  ok
+Documentaries              2020    118   118    24   7.088  7.088  ok
+Documentaries              2021     99    99    14   7.225  7.225  ok
+Dramas                     2015     12    12     3   7.250  7.250  ok
+Dramas                     2016     65    65    22   6.800  6.800  ok
+Dramas                     2017    293   293    74   6.508  6.508  ok
+Dramas                     2018    530   530   120   6.667  6.667  ok
+Dramas                     2019    564   564   200   6.942  6.942  ok
+Dramas                     2020    535   535   180   6.738  6.738  ok
+Dramas                     2021    412   412   159   6.776  6.776  ok
+Independent Movies         2015      7     7     3   6.567  6.567  ok
+Independent Movies         2016     31    31    17   7.047  7.047  ok
+Independent Movies         2017    116   116    50   6.441  6.441  ok
+Independent Movies         2018    163   163    68   6.837  6.837  ok
+Independent Movies         2019    201   201    79   6.853  6.853  ok
+Independent Movies         2020    148   148    75   6.751  6.751  ok
+Independent Movies         2021     89    89    43   6.961  6.961  ok
+International Movies       2015     10    10     2   6.400  6.400  ok
+International Movies       2016     82    82    18   6.469  6.469  ok
+International Movies       2017    395   395    43   6.700  6.700  ok
+International Movies       2018    666   666    67   6.665  6.665  ok
+International Movies       2019    610   610    79   6.849  6.849  ok
+International Movies       2020    575   575    61   6.912  6.912  ok
+International Movies       2021    408   408    37   6.643  6.643  ok
+International TV Shows     2015      3     3     0                 ok
+International TV Shows     2016     85    85     2   7.500  7.500  ok
+International TV Shows     2017    205   205    13   6.822  6.822  ok
+International TV Shows     2018    213   213    15   7.254  7.254  ok
+International TV Shows     2019    334   334    15   6.015  6.015  ok
+International TV Shows     2020    277   277    21   6.347  6.347  ok
+International TV Shows     2021    229   229    13   6.800  6.800  ok
+Romantic Movies            2015      1     1     0                 ok
+Romantic Movies            2016      7     7     2   6.550  6.550  ok
+Romantic Movies            2017     63    63    12   6.373  6.373  ok
+Romantic Movies            2018    108   108    20   6.439  6.439  ok
+Romantic Movies            2019    150   150    39   6.645  6.645  ok
+Romantic Movies            2020    173   173    52   6.427  6.427  ok
+Romantic Movies            2021    114   114    51   6.204  6.204  ok
+TV Dramas                  2015      8     8     0                 ok
+TV Dramas                  2016     43    43     2   6.000  6.000  ok
+TV Dramas                  2017    130   130    11   7.325  7.325  ok
+TV Dramas                  2018    109   109     9   7.043  7.043  ok
+TV Dramas                  2019    163   163    13   5.445  5.445  ok
+TV Dramas                  2020    164   164    15   6.315  6.315  ok
+TV Dramas                  2021    137   137    12   6.758  6.758  ok
+
+70 combinações ano × gênero comparadas; diferenças: 0
+
+tabela do dashboard (top 10 de 2015 em diante, calculado pelo Cube):
+  International Movies        2746  307 6.756
+  Dramas                      2411  758 6.773
+  Comedies                    1667  484 6.473
+  International TV Shows      1346   79 6.621
+  Documentaries                859  154 6.860
+  Action & Adventure           858  351 6.592
+  Independent Movies           755  335 6.787
+  TV Dramas                    754   62 6.481
+  Children & Family Movies     633  153 6.561
+  Romantic Movies              616  176 6.412

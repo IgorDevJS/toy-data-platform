@@ -1,0 +1,70 @@
+cubes:
+  - name: catalog
+    sql_table: refined.ml.fct_catalog
+
+    description: >
+      Catálogo inteiro da Netflix no grão de um título (`title_key`), com o ano em
+      que o título entrou no catálogo. É uma população diferente da do cubo `titles`
+      (só os títulos com nota da crítica), por isso a contagem tem outro nome:
+      `count_catalog_titles` (catálogo) × `count_titles` (com nota da crítica).
+
+    joins:
+      # Um título do catálogo tem no máximo uma linha no `fct_titles` (mesmo grão,
+      # mesma chave). O Cube junta com LEFT JOIN, então os títulos sem nota da
+      # crítica continuam no catálogo e só ficam sem `avg_rating`.
+      - name: titles
+        relationship: one_to_one
+        sql: "{CUBE}.title_key = {titles}.title_key"
+
+      # Mesmas pontes do cubo `titles` (na Fase 1 elas passaram a cobrir o catálogo
+      # inteiro). O `one_to_many` com o `primary_key` abaixo faz o Cube deduplicar
+      # pelo título: fatiar por gênero não infla a contagem nem a nota.
+      - name: title_genre
+        relationship: one_to_many
+        sql: "{CUBE}.title_key = {title_genre}.title_key"
+
+      - name: title_country
+        relationship: one_to_many
+        sql: "{CUBE}.title_key = {title_country}.title_key"
+
+    dimensions:
+      - name: title_key
+        description: Chave do título — é o grão do fato.
+        sql: title_key
+        type: string
+        primary_key: true
+
+      - name: title
+        sql: title
+        type: string
+
+      - name: year_added
+        description: >
+          Ano em que o título entrou no catálogo da Netflix (de `date_added`). Nulo
+          para os 10 títulos sem data na fonte. A fonte vai até set/2021: 2021 é ano
+          parcial.
+        sql: added_year
+        type: number
+
+      - name: release_year
+        description: Ano de lançamento.
+        sql: year_key
+        type: number
+
+      - name: title_type
+        description: Tipo do título (Movie / TV Show).
+        sql: type_key
+        type: string
+
+      - name: has_critic_rating
+        description: O título tem nota da crítica (está no `fct_titles`)?
+        sql: has_critic_rating
+        type: boolean
+
+    measures:
+      - name: count_catalog_titles
+        description: >
+          Títulos do catálogo inteiro da Netflix (8802). Não confundir com
+          `count_titles`, que conta só os títulos com nota da crítica (1813).
+        type: count_distinct
+        sql: title_key

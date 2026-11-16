@@ -1,0 +1,53 @@
+# Fase 2 · Cube reiniciado com o cubo catalog e a view catalog_overview
+$ docker compose restart cube && docker compose ps cube trino
+SERVICE   STATUS
+cube      Up 4 minutes (healthy)
+trino     Up 5 minutes (healthy)
+
+$ docker compose logs cube | grep -i error   # nenhum erro de compilação do modelo
+ocorrências: 0
+
+$ curl -s http://localhost:4000/cubejs-api/v1/meta   # cubos, views, medidas e dimensões  (2026-11-16 18:40:49)
+cube  catalog
+        medida   count_catalog_titles   countDistinct: Títulos do catálogo inteiro da Netflix (8802). Não confundir com `count_titles`, que conta
+        dimensão title_key              string
+        dimensão title                  string
+        dimensão year_added             number
+        dimensão release_year           number
+        dimensão title_type             string
+        dimensão has_critic_rating      boolean
+cube  title_country
+        dimensão title_key              string
+        dimensão country                string
+cube  title_genre
+        dimensão title_key              string
+        dimensão genre                  string
+cube  titles
+        medida   count_titles           countDistinct: Quantidade de títulos distintos com nota da crítica (os 1813 que cruzam com o Metacritic).
+        medida   avg_rating             avg: Nota média da crítica.
+        medida   total_votes            sum: Total de votos da crítica.
+        dimensão title_key              string
+        dimensão title                  string
+        dimensão release_year           number
+        dimensão title_type             string
+        dimensão year_added             number
+view  catalog_overview
+        medida   count_catalog_titles   countDistinct: Títulos do catálogo inteiro da Netflix (8802). Não confundir com `count_titles`, que conta
+        medida   count_titles           countDistinct: Quantidade de títulos distintos com nota da crítica (os 1813 que cruzam com o Metacritic).
+        medida   avg_rating             avg: Nota média da crítica.
+        medida   total_votes            sum: Total de votos da crítica.
+        dimensão year_added             number
+        dimensão release_year           number
+        dimensão title_type             string
+        dimensão has_critic_rating      boolean
+        dimensão genre                  string
+        dimensão country                string
+view  titles_overview
+        medida   count_titles           countDistinct: Quantidade de títulos distintos com nota da crítica (os 1813 que cruzam com o Metacritic).
+        medida   avg_rating             avg: Nota média da crítica.
+        medida   total_votes            sum: Total de votos da crítica.
+        dimensão release_year           number
+        dimensão year_added             number
+        dimensão title_type             string
+        dimensão genre                  string
+        dimensão country                string

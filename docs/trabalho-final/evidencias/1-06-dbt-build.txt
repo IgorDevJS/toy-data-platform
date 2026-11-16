@@ -1,0 +1,151 @@
+$ make dbt-build  (2026-11-13 18:08:42)
+docker build -t movies_transform dbt/
+
+
+
+
+
+
+docker run --rm \
+    -v /home/igor/Documentos/facul-pos/data-engineering/toy-data-platform/dbt/movies_transform:/usr/app/movies_transform \
+    --env-file /home/igor/Documentos/facul-pos/data-engineering/toy-data-platform/dbt/.env \
+    --network platform-net \
+    -w /usr/app/movies_transform \
+    movies_transform \
+    dbt build --target-path target/prod
+21:08:47  Running with dbt=1.12.6
+INFO:trino.auth:keyring module not found. OAuth2 token will not be stored in keyring.
+INFO:trino.auth:keyring module not found. OAuth2 token will not be stored in keyring.
+21:08:47  Registered adapter: trino=1.10.6
+21:08:49  Found 12 models, 1 seed, 48 data tests, 1 snapshot, 2 sources, 500 macros
+21:08:49  
+21:08:49  Concurrency: 1 threads (target='prod')
+21:08:49  
+21:08:50  1 of 61 START sql table model movies.meta_critic ............................... [RUN]
+21:08:51  1 of 61 OK created sql table model movies.meta_critic .......................... [CREATE TABLE (15_167 rows) in 0.86s]
+21:08:51  2 of 61 START sql table model movies.netflix_titles ............................ [RUN]
+21:08:51  2 of 61 OK created sql table model movies.netflix_titles ....................... [CREATE TABLE (8_807 rows) in 0.51s]
+21:08:51  3 of 61 START seed file raw.seed_data.orders_seed .............................. [RUN]
+21:08:52  3 of 61 OK loaded seed file seed_data.orders_seed .............................. [INSERT 2 in 0.49s]
+21:08:52  4 of 61 START test not_null_netflix_titles_date_added .......................... [RUN]
+21:08:52  4 of 61 PASS not_null_netflix_titles_date_added ................................ [PASS in 0.16s]
+21:08:52  5 of 61 START test not_null_netflix_titles_show_id ............................. [RUN]
+21:08:52  5 of 61 PASS not_null_netflix_titles_show_id ................................... [PASS in 0.15s]
+21:08:52  6 of 61 START test unique_netflix_titles_show_id ............................... [RUN]
+21:08:52  6 of 61 PASS unique_netflix_titles_show_id ..................................... [PASS in 0.18s]
+21:08:52  7 of 61 START sql incremental model delivery.orders ............................ [RUN]
+21:08:53  7 of 61 OK created sql incremental model delivery.orders ....................... [MERGE (0 rows) in 0.63s]
+21:08:53  8 of 61 START sql table model refined.ml.dim_type .............................. [RUN]
+21:08:53  8 of 61 OK created sql table model refined.ml.dim_type ......................... [CREATE TABLE (2 rows) in 0.24s]
+21:08:53  9 of 61 START sql table model refined.ml.dim_year .............................. [RUN]
+21:08:53  9 of 61 OK created sql table model refined.ml.dim_year ......................... [CREATE TABLE (74 rows) in 0.26s]
+21:08:53  10 of 61 START test not_null_orders_order_id ................................... [RUN]
+21:08:54  10 of 61 PASS not_null_orders_order_id ......................................... [PASS in 0.08s]
+21:08:54  11 of 61 START test unique_orders_order_id ..................................... [RUN]
+21:08:54  11 of 61 PASS unique_orders_order_id ........................................... [PASS in 0.11s]
+21:08:54  12 of 61 START test not_null_dim_type_type_key ................................. [RUN]
+21:08:54  12 of 61 PASS not_null_dim_type_type_key ....................................... [PASS in 0.09s]
+21:08:54  13 of 61 START test unique_dim_type_type_key ................................... [RUN]
+21:08:54  13 of 61 PASS unique_dim_type_type_key ......................................... [PASS in 0.12s]
+21:08:54  14 of 61 START test not_null_dim_year_year_key ................................. [RUN]
+21:08:54  14 of 61 PASS not_null_dim_year_year_key ....................................... [PASS in 0.09s]
+21:08:54  15 of 61 START test unique_dim_year_year_key ................................... [RUN]
+21:08:54  15 of 61 PASS unique_dim_year_year_key ......................................... [PASS in 0.10s]
+21:08:54  16 of 61 START sql table model refined.ml.fct_titles ........................... [RUN]
+21:08:54  16 of 61 OK created sql table model refined.ml.fct_titles ...................... [CREATE TABLE (1_813 rows) in 0.38s]
+21:08:54  17 of 61 START test assert_fct_titles_grain .................................... [RUN]
+21:08:55  17 of 61 PASS assert_fct_titles_grain .......................................... [PASS in 0.23s]
+21:08:55  18 of 61 START test not_null_fct_titles_title .................................. [RUN]
+21:08:55  18 of 61 PASS not_null_fct_titles_title ........................................ [PASS in 0.07s]
+21:08:55  19 of 61 START test not_null_fct_titles_title_key .............................. [RUN]
+21:08:55  19 of 61 PASS not_null_fct_titles_title_key .................................... [PASS in 0.07s]
+21:08:55  20 of 61 START test not_null_fct_titles_type_key ............................... [RUN]
+21:08:55  20 of 61 PASS not_null_fct_titles_type_key ..................................... [PASS in 0.07s]
+21:08:55  21 of 61 START test not_null_fct_titles_year_key ............................... [RUN]
+21:08:55  21 of 61 PASS not_null_fct_titles_year_key ..................................... [PASS in 0.08s]
+21:08:55  22 of 61 START test relationships_fct_titles_added_year__year_key__ref_dim_year_  [RUN]
+21:08:55  22 of 61 PASS relationships_fct_titles_added_year__year_key__ref_dim_year_ ..... [PASS in 0.12s]
+21:08:55  23 of 61 START test relationships_fct_titles_type_key__type_key__ref_dim_type_ . [RUN]
+21:08:55  23 of 61 PASS relationships_fct_titles_type_key__type_key__ref_dim_type_ ....... [PASS in 0.12s]
+21:08:55  24 of 61 START test relationships_fct_titles_year_key__year_key__ref_dim_year_ . [RUN]
+21:08:55  24 of 61 PASS relationships_fct_titles_year_key__year_key__ref_dim_year_ ....... [PASS in 0.13s]
+21:08:55  25 of 61 START test unique_fct_titles_title_key ................................ [RUN]
+21:08:55  25 of 61 PASS unique_fct_titles_title_key ...................................... [PASS in 0.12s]
+21:08:55  26 of 61 START sql table model refined.ml.fct_catalog .......................... [RUN]
+21:08:56  26 of 61 OK created sql table model refined.ml.fct_catalog ..................... [INSERT (8_802 rows) in 0.91s]
+21:08:56  27 of 61 START snapshot refined.snapshots.titles_snapshot ...................... [RUN]
+21:08:58  27 of 61 OK snapshotted refined.snapshots.titles_snapshot ...................... [MERGE (0 rows) in 1.35s]
+21:08:58  28 of 61 START test assert_fct_catalog_grain ................................... [RUN]
+21:08:58  28 of 61 PASS assert_fct_catalog_grain ......................................... [PASS in 0.21s]
+21:08:58  29 of 61 START test not_null_fct_catalog_added_year ............................ [RUN]
+21:08:58  29 of 61 PASS not_null_fct_catalog_added_year .................................. [PASS in 0.14s]
+21:08:58  30 of 61 START test not_null_fct_catalog_has_critic_rating ..................... [RUN]
+21:08:58  30 of 61 PASS not_null_fct_catalog_has_critic_rating ........................... [PASS in 0.08s]
+21:08:58  31 of 61 START test not_null_fct_catalog_title ................................. [RUN]
+21:08:58  31 of 61 PASS not_null_fct_catalog_title ....................................... [PASS in 0.08s]
+21:08:58  32 of 61 START test not_null_fct_catalog_title_key ............................. [RUN]
+21:08:58  32 of 61 PASS not_null_fct_catalog_title_key ................................... [PASS in 0.08s]
+21:08:58  33 of 61 START test not_null_fct_catalog_type_key .............................. [RUN]
+21:08:58  33 of 61 PASS not_null_fct_catalog_type_key .................................... [PASS in 0.07s]
+21:08:58  34 of 61 START test not_null_fct_catalog_year_key .............................. [RUN]
+21:08:58  34 of 61 PASS not_null_fct_catalog_year_key .................................... [PASS in 0.07s]
+21:08:58  35 of 61 START test relationships_fct_catalog_added_year__year_key__ref_dim_year_  [RUN]
+21:08:59  35 of 61 PASS relationships_fct_catalog_added_year__year_key__ref_dim_year_ .... [PASS in 0.14s]
+21:08:59  36 of 61 START test relationships_fct_catalog_type_key__type_key__ref_dim_type_  [RUN]
+21:08:59  36 of 61 PASS relationships_fct_catalog_type_key__type_key__ref_dim_type_ ...... [PASS in 0.13s]
+21:08:59  37 of 61 START test relationships_fct_catalog_year_key__year_key__ref_dim_year_  [RUN]
+21:08:59  37 of 61 PASS relationships_fct_catalog_year_key__year_key__ref_dim_year_ ...... [PASS in 0.13s]
+21:08:59  38 of 61 START test relationships_fct_titles_title_key__title_key__ref_fct_catalog_  [RUN]
+21:08:59  38 of 61 PASS relationships_fct_titles_title_key__title_key__ref_fct_catalog_ .. [PASS in 0.19s]
+21:08:59  39 of 61 START test unique_fct_catalog_title_key ............................... [RUN]
+21:08:59  39 of 61 PASS unique_fct_catalog_title_key ..................................... [PASS in 0.16s]
+21:08:59  40 of 61 START test not_null_titles_snapshot_title_key ......................... [RUN]
+21:08:59  40 of 61 PASS not_null_titles_snapshot_title_key ............................... [PASS in 0.11s]
+21:08:59  41 of 61 START sql table model refined.ml.bridge_title_country ................. [RUN]
+21:09:00  41 of 61 OK created sql table model refined.ml.bridge_title_country ............ [CREATE TABLE (10_006 rows) in 0.65s]
+21:09:00  42 of 61 START sql table model refined.ml.bridge_title_genre ................... [RUN]
+21:09:01  42 of 61 OK created sql table model refined.ml.bridge_title_genre .............. [CREATE TABLE (19_309 rows) in 0.54s]
+21:09:01  43 of 61 START test not_null_bridge_title_country_country_key .................. [RUN]
+21:09:01  43 of 61 PASS not_null_bridge_title_country_country_key ........................ [PASS in 0.07s]
+21:09:01  44 of 61 START test not_null_bridge_title_country_title_country_key ............ [RUN]
+21:09:01  44 of 61 PASS not_null_bridge_title_country_title_country_key .................. [PASS in 0.13s]
+21:09:01  45 of 61 START test not_null_bridge_title_country_title_key .................... [RUN]
+21:09:01  45 of 61 PASS not_null_bridge_title_country_title_key .......................... [PASS in 0.09s]
+21:09:01  46 of 61 START test relationships_bridge_title_country_title_key__title_key__ref_fct_catalog_  [RUN]
+21:09:01  46 of 61 PASS relationships_bridge_title_country_title_key__title_key__ref_fct_catalog_  [PASS in 0.13s]
+21:09:01  47 of 61 START test unique_bridge_title_country_title_country_key .............. [RUN]
+21:09:01  47 of 61 PASS unique_bridge_title_country_title_country_key .................... [PASS in 0.12s]
+21:09:01  48 of 61 START test assert_bridge_genre_covers_catalog ......................... [RUN]
+21:09:01  48 of 61 PASS assert_bridge_genre_covers_catalog ............................... [PASS in 0.21s]
+21:09:01  49 of 61 START test not_null_bridge_title_genre_genre_key ...................... [RUN]
+21:09:02  49 of 61 PASS not_null_bridge_title_genre_genre_key ............................ [PASS in 0.15s]
+21:09:02  50 of 61 START test not_null_bridge_title_genre_title_genre_key ................ [RUN]
+21:09:02  50 of 61 PASS not_null_bridge_title_genre_title_genre_key ...................... [PASS in 0.14s]
+21:09:02  51 of 61 START test not_null_bridge_title_genre_title_key ...................... [RUN]
+21:09:02  51 of 61 PASS not_null_bridge_title_genre_title_key ............................ [PASS in 0.14s]
+21:09:02  52 of 61 START test relationships_bridge_title_genre_title_key__title_key__ref_fct_catalog_  [RUN]
+21:09:02  52 of 61 PASS relationships_bridge_title_genre_title_key__title_key__ref_fct_catalog_  [PASS in 0.19s]
+21:09:02  53 of 61 START test unique_bridge_title_genre_title_genre_key .................. [RUN]
+21:09:02  53 of 61 PASS unique_bridge_title_genre_title_genre_key ........................ [PASS in 0.16s]
+21:09:02  54 of 61 START sql table model refined.ml.dim_country .......................... [RUN]
+21:09:03  54 of 61 OK created sql table model refined.ml.dim_country ..................... [CREATE TABLE (122 rows) in 0.36s]
+21:09:03  55 of 61 START sql table model refined.ml.dim_genre ............................ [RUN]
+21:09:03  55 of 61 OK created sql table model refined.ml.dim_genre ....................... [CREATE TABLE (42 rows) in 0.22s]
+21:09:03  56 of 61 START test not_null_dim_country_country_key ........................... [RUN]
+21:09:03  56 of 61 PASS not_null_dim_country_country_key ................................. [PASS in 0.10s]
+21:09:03  57 of 61 START test relationships_bridge_title_country_country_key__country_key__ref_dim_country_  [RUN]
+21:09:03  57 of 61 PASS relationships_bridge_title_country_country_key__country_key__ref_dim_country_  [PASS in 0.13s]
+21:09:03  58 of 61 START test unique_dim_country_country_key ............................. [RUN]
+21:09:03  58 of 61 PASS unique_dim_country_country_key ................................... [PASS in 0.10s]
+21:09:03  59 of 61 START test not_null_dim_genre_genre_key ............................... [RUN]
+21:09:03  59 of 61 PASS not_null_dim_genre_genre_key ..................................... [PASS in 0.07s]
+21:09:03  60 of 61 START test relationships_bridge_title_genre_genre_key__genre_key__ref_dim_genre_  [RUN]
+21:09:03  60 of 61 PASS relationships_bridge_title_genre_genre_key__genre_key__ref_dim_genre_  [PASS in 0.12s]
+21:09:03  61 of 61 START test unique_dim_genre_genre_key ................................. [RUN]
+21:09:03  61 of 61 PASS unique_dim_genre_genre_key ....................................... [PASS in 0.11s]
+21:09:03  
+21:09:03  Finished running 1 incremental model, 1 seed, 1 snapshot, 10 table models, 48 data tests in 0 hours 0 minutes and 14.21 seconds (14.21s).
+21:09:03  
+21:09:03  Completed successfully
+21:09:04  
+21:09:04  Done. PASS=61 WARN=0 ERROR=0 SKIP=0 NO-OP=0 REUSED=0 TOTAL=61

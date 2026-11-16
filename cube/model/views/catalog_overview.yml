@@ -1,0 +1,37 @@
+views:
+  # Fachada plana para perguntas sobre o catálogo inteiro. A raiz é o `catalog`
+  # (8802 títulos), e não o `titles` (1813): é o que permite contar o catálogo e,
+  # na mesma consulta, olhar a nota da crítica dos títulos que a têm.
+  #
+  # A `titles_overview` continua como era (raiz `titles`), porque o dashboard
+  # original e o agente usam os números dela.
+  - name: catalog_overview
+
+    description: >
+      Títulos do catálogo e nota da crítica, fatiáveis por ano de entrada no
+      catálogo, gênero, país e tipo. Duas populações com nomes diferentes:
+      `count_catalog_titles` (o catálogo inteiro) e `count_titles`/`avg_rating`
+      (só os títulos com nota da crítica).
+
+    cubes:
+      - join_path: catalog
+        includes:
+          - count_catalog_titles
+          - year_added
+          - release_year
+          - title_type
+          - has_critic_rating
+
+      - join_path: catalog.titles
+        includes:
+          - count_titles
+          - avg_rating
+          - total_votes
+
+      - join_path: catalog.title_genre
+        includes:
+          - genre
+
+      - join_path: catalog.title_country
+        includes:
+          - country

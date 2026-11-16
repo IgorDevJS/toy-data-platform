@@ -21,10 +21,18 @@ x-airflow-common:
     - airflow-plugins:/opt/airflow/plugins
     - airflow-config:/opt/airlfow/airflow.cfg
     - /var/run/docker.sock:/var/run/docker.sock
+    # Variáveis dos containers que as DAGs disparam: uma fonte só, lida pelo
+    # `env_file` do DockerOperator (procurado no `template_searchpath` da DAG).
+    - ./dlt/.env.docker:/opt/airflow/env/dlt.env:ro
+    - ./dbt/.env:/opt/airflow/env/dbt.env:ro
   depends_on:
     - postgres
+  # O DockerOperator usa o socket do Docker do host. No Docker Desktop ele é do
+  # grupo 0; no Linux, do grupo `docker`, cujo GID muda de máquina para máquina
+  # (`DOCKER_GID` no `.env` da raiz, ver README). Sem isso: Permission denied.
   group_add:
       - "0"
+      - "${DOCKER_GID:-0}"
 
 services:
   postgres:
@@ -208,12 +216,22 @@ services:
       - setup.sh
     ports:
       - '8088:8088'
+    # O healthcheck herdado da imagem (30s × 3, sem start_period) desiste em ~90s,
+    # e no primeiro boot as migrations do metadata DB levam mais que isso: o
+    # Superset ficava `unhealthy` e o `superset-bootstrap` não rodava. Falhas
+    # dentro do start_period não contam; o primeiro sucesso já marca `healthy`.
+    healthcheck:
+      test: [ "CMD-SHELL", "/app/docker/docker-healthcheck.sh" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 300s
     depends_on:
       superset-postgres:
         condition: service_healthy
 
-  # Registra o Cube como banco do Superset (protocolo Postgres) e publica o
-  # dashboard de exemplo. Roda uma vez após o Superset subir; é idempotente.
+  # Registra o Cube como banco do Superset (protocolo Postgres) e publica
+  # os dashboards. Roda uma vez após o Superset subir; é idempotente.
   # As credenciais da SQL API vêm de cube/.env — uma verdade só.
   superset-bootstrap:
     image: superset-semantico

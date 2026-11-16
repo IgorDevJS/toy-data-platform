@@ -44,12 +44,17 @@ container** e por que o **Cube lê o Trino** em vez de os consumidores lerem o T
 ```bash
 git clone https://github.com/lorransr/toy-data-platform.git
 cd toy-data-platform
+echo "DOCKER_GID=$(stat -c %g /var/run/docker.sock)" > .env   # só no Linux, uma vez
 docker compose up -d
 ```
 
+A linha do `.env` deixa o Airflow usar o Docker do host, o que as DAGs precisam (ver
+[Rodar todo dia](#rodar-todo-dia-a-dag-movies_daily)). No Docker Desktop (Mac/Windows),
+pule essa linha.
+
 Na primeira subida o Compose cria os buckets, registra os catálogos `raw`, `trusted`
-e `refined` no Lakekeeper, sobe o Superset (migrations + admin) e publica o dashboard
-de exemplo. Leva alguns minutos; o serviço que registra o Cube no Superset
+e `refined` no Lakekeeper, sobe o Superset (migrations + admin) e publica os dois
+dashboards. Leva alguns minutos; o serviço que registra o Cube no Superset
 (`superset-bootstrap`) roda uma vez e sai.
 
 ```bash
@@ -93,16 +98,29 @@ make dbt-build      # dbt build: seeds + models + testes de dados
 ```
 
 Isso monta `trusted.movies` / `trusted.delivery` e o modelo dimensional em
-`refined.ml`: o fato `fct_titles` (grão = **um título**), as dimensões `dim_year`,
-`dim_type` e as pontes `bridge_title_genre` / `bridge_title_country` (gênero e país
-são multi-valor). Os testes de dados do dbt (`unique`, `not_null`, `relationships` e
-as asserções de grão em `dbt/movies_transform/tests/`) rodam no mesmo comando.
+`refined.ml`: dois fatos no grão de **um título**, o `fct_titles` (os 1813 títulos com
+nota da crítica) e o `fct_catalog` (o catálogo inteiro, 8802 títulos, com o ano de
+entrada `added_year`), as dimensões `dim_year` (ano de lançamento e de entrada) e
+`dim_type`, e as pontes `bridge_title_genre` / `bridge_title_country` (gênero e país
+são multi-valor). Os testes de dados do dbt (`unique`, `not_null`, `relationships`, o
+contrato do `fct_catalog` e as asserções de grão em `dbt/movies_transform/tests/`) rodam
+no mesmo comando, e também o snapshot `refined.snapshots.titles_snapshot`, que guarda o
+histórico da nota de cada título (SCD tipo 2).
 
 ```bash
 docker compose exec trino trino --execute \
   "SELECT count(*), count(DISTINCT title_key) FROM refined.ml.fct_titles"
 # 1813  1813  -> o fato tem exatamente um título por linha
 ```
+
+O frescor das fontes fica fora do `dbt build`:
+
+```bash
+make dbt-freshness  # dbt source freshness: idade da última carga do dlt (_dlt_load_id)
+```
+
+As etapas 2 e 3 também rodam sozinhas, todo dia, pelo Airflow: ver
+[Rodar todo dia](#rodar-todo-dia-a-dag-movies_daily).
 
 ### 4. Consultar a camada semântica
 
@@ -137,11 +155,29 @@ escrever cliente nenhum — bom para a aula.
 
 ### 5. Ver no Superset
 
-Abra <http://localhost:8088> (`admin` / `secret`) → **Dashboards** → *Camada
-semântica — títulos*: um gráfico de barras de nota média por país e uma tabela de
-medidas por tipo de título. O Superset enxerga o Cube como se fosse um banco
-Postgres (`titles_overview` = uma tabela, medidas e dimensões = colunas), então o
-builder normal funciona — mas não há SQL livre nem joins ad-hoc ([limitações](#por-que-o-superset-vê-um-banco)).
+Abra <http://localhost:8088> (`admin` / `secret`) → **Dashboards**. São dois, os
+dois criados pelo `superset-bootstrap` (`superset/bootstrap_semantic_layer.py`):
+
+- *Camada semântica — títulos* (dataset `titles_overview`): um gráfico de barras de
+  nota média por país e uma tabela de medidas por tipo de título.
+- *Crescimento do catálogo por gênero* (dataset `catalog_overview`): títulos
+  adicionados ao catálogo por ano e gênero, a nota média da crítica dos mesmos
+  gêneros por ano de entrada e uma tabela com o tamanho de cada gênero e quantos
+  títulos têm nota (a amostra da média). Recorte: de 2015 em diante, os 10 gêneros
+  com mais títulos.
+
+O Superset enxerga o Cube como se fosse um banco Postgres (cada view = uma tabela,
+medidas e dimensões = colunas), então o builder normal funciona — mas não há SQL
+livre nem joins ad-hoc ([limitações](#por-que-o-superset-vê-um-banco)).
+
+Gráfico, métrica e dashboard novos entram no bootstrap, e não pela interface: o que
+se cria clicando fica só no banco de metadados do Superset e some quando o volume é
+recriado. O bootstrap é idempotente (rodar de novo atualiza, não duplica) e
+sincroniza as colunas de cada dataset com o Cube a cada execução:
+
+```bash
+docker compose run --rm --no-deps superset-bootstrap
+```
 
 ### 6. Perguntar ao agente
 
@@ -164,11 +200,55 @@ O agente **descobre** o que existe antes de perguntar e devolve a chamada que ge
 resposta — é o *context engineering* da aula. Para ligar um cliente MCP de verdade
 (Claude Desktop, Cursor etc.) veja [`mcp/README.md`](mcp/README.md).
 
+## Rodar todo dia: a DAG `movies_daily`
+
+A DAG `airflow/dags/movies_daily.py` faz as etapas 2 e 3 sem ninguém digitar `make`:
+
+```
+ingest-imdb_top_1000 ─┐
+ingest-meta_critic ───┼─► dbt-source-freshness ─► dbt-build
+ingest-netflix_titles ┘
+```
+
+- **`@daily`** (meia-noite UTC), `catchup=False`, já nasce ligada
+  (`is_paused_upon_creation=False`): assim que o Airflow lê o arquivo, roda o último dia
+  agendado uma vez (sem recuperar os dias anteriores), e depois uma vez por dia.
+- As três ingestões rodam **em paralelo**; o `dbt source freshness` só deixa transformar
+  se a carga chegou na `raw`; o `dbt build` roda models, snapshot e testes (`PASS=61`).
+- `retries=2`, `retry_delay=2 min`: uma falha passageira (Trino reiniciando) não derruba
+  o dia; uma falha que persiste para no freshness e o `dbt-build` nem começa.
+- Idempotente: duas execuções seguidas deixam as mesmas contagens, porque o dlt faz
+  `replace`, os models são recriados e o snapshot só abre versão nova quando a nota muda.
+
+Cada tarefa é um container (`DockerOperator`) na rede `platform-net`, como no Makefile.
+O Airflow não constrói imagem, então as duas precisam existir, e ser reconstruídas depois
+de mudar o dbt ou o dlt:
+
+```bash
+make airflow-images   # = make build dlt-build: movies_transform e my-dlt-pipeline
+make airflow-run      # dispara uma execução manual, além da agendada
+```
+
+Detalhes que não aparecem no código da DAG:
+
+- A imagem `movies_transform` leva o projeto dbt dentro (`COPY` no `dbt/Dockerfile`). Um
+  bind mount não serviria: o Airflow fala com o Docker do **host** pelo socket, e o
+  caminho do mount seria o do host, não o de dentro do Airflow. Os alvos `make dbt-*`
+  continuam montando o projeto por cima, então o desenvolvimento lê os arquivos do host.
+- As variáveis vêm dos mesmos arquivos do Makefile: `dlt/.env.docker` e `dbt/.env` são
+  montados no Airflow em `/opt/airflow/env` e lidos pelo `env_file` do `DockerOperator`.
+- No Linux, o socket do Docker é do grupo `docker`, cujo GID muda de máquina para máquina.
+  Sem o `DOCKER_GID` no `.env` da raiz, as tarefas falham com `Permission denied`.
+
+Os logs de cada tarefa ficam no Airflow (<http://localhost:8080>, DAG `movies_daily`,
+aba *Grid*). A DAG antiga, `extract_movies` (`@once`, ingestões em fila), continua lá,
+pausada, e lê as variáveis do mesmo `dlt/.env.docker`.
+
 ## Serviços e endereços
 
 | Serviço | Papel | Endereço / credenciais |
 | - | - | - |
-| Airflow | orquestração (DAG `extract_movies` ingere os 3 CSVs) | <http://localhost:8080> — `admin` / `admin` |
+| Airflow | orquestração (DAG diária `movies_daily`: dlt → dbt) | <http://localhost:8080> — `admin` / `admin` |
 | MinIO | object storage dos arquivos Iceberg | console: <http://localhost:9001> — `root` / `rootrootroot` |
 | Lakekeeper | catálogo Iceberg (API REST; sem UI) | <http://localhost:8181> |
 | Trino | engine SQL sobre os três catálogos | <http://localhost:8081> |
@@ -182,16 +262,20 @@ resposta — é o *context engineering* da aula. Para ligar um cliente MCP de ve
 
 | Medida | Definição |
 | - | - |
-| `count_titles` | quantidade de títulos distintos |
+| `count_titles` | quantidade de títulos distintos com nota da crítica (1813) |
+| `count_catalog_titles` | quantidade de títulos do catálogo inteiro (8802) |
 | `avg_rating` | nota média da crítica |
 | `total_votes` | total de votos da crítica |
 
-Dimensões: `release_year`, `title_type`, `genre`, `country`.
+Dimensões: `release_year`, `year_added` (ano de entrada no catálogo), `title_type`,
+`genre`, `country`.
 
-O modelo semântico é YAML versionado em `cube/model/` — a medida é definida **uma vez
-só**, no cubo `titles`, e a view `titles_overview` é a fachada plana que o Superset e
-o agente consomem (`cube/README.md` tem o detalhe, inclusive de como fatiar por
-gênero/país sem inflar as medidas).
+O modelo semântico é YAML versionado em `cube/model/` — cada medida é definida **uma
+vez só**, no seu cubo (`titles` ou `catalog`), e as views são as fachadas planas que
+os consumidores usam: `titles_overview` (títulos com nota da crítica, a do Superset
+original e do agente) e `catalog_overview` (o catálogo inteiro, com a nota ao lado).
+O `cube/README.md` tem o detalhe, inclusive de como fatiar por gênero/país sem inflar
+as medidas.
 
 ## Smoke antes da aula
 
@@ -200,7 +284,7 @@ Roteiro de 5 minutos para rodar com o stack no ar, antes de entrar na sala:
 1. **Ingerir** as duas fontes do dbt:
    `make dlt-run DLT_TABLE=netflix_titles` → `8807` linhas, e
    `make dlt-run DLT_TABLE=meta_critic` → `16290` linhas, em `raw.raw_movies`.
-2. **Transformar:** `make dbt-build` → `Done. PASS=45`, e `refined.ml.fct_titles` com `1813` linhas = `1813` chaves distintas.
+2. **Transformar:** `make dbt-build` → `Done. PASS=61`, `refined.ml.fct_titles` com `1813` linhas = `1813` chaves distintas e `refined.ml.fct_catalog` com `8802` = `8802`.
 3. **Camada semântica:**
    ```bash
    docker run --rm --network platform-net -e PGPASSWORD=cubecubecube postgres:16 \
@@ -208,7 +292,10 @@ Roteiro de 5 minutos para rodar com o stack no ar, antes de entrar na sala:
      -c "SELECT title_type, MEASURE(count_titles), MEASURE(avg_rating) FROM titles_overview GROUP BY 1"
    ```
    → `Movie 1673 / 6.627` e `TV Show 140 / 6.597` (sem dimensão: `1813 / 6.625 / 322914`).
-4. **Superset:** o dashboard *Camada semântica — títulos* abre com o gráfico de barras e a tabela preenchidos.
+   Na `catalog_overview`, `SELECT MEASURE(count_catalog_titles), MEASURE(count_titles) FROM catalog_overview` → `8802 / 1813`.
+4. **Superset:** o dashboard *Camada semântica — títulos* abre com o gráfico de barras e a tabela preenchidos;
+   o *Crescimento do catálogo por gênero* abre com as duas linhas e a tabela (International Movies `2746` títulos
+   de 2015 em diante, `307` com nota, `6.76`).
 5. **Agente:** `make mcp-demo` → `Japan — nota média 7.079 em 29 títulos`.
 
 Se os números não baterem, o problema é a etapa que não rodou: o Cube lê o `refined`,
@@ -238,7 +325,7 @@ Sem essa linha a gravação falha por resolução de nome/conexão. A explicaç�
 ## Estrutura do repositório
 
 ```
-airflow/      DAG de ingestão (DockerOperator na imagem do dlt)
+airflow/      DAGs: `movies_daily` (dlt → dbt, todo dia) e `extract_movies` (ingestão)
 cube/         modelo semântico em YAML (cube/model/) + README da camada semântica
 dbt/          projeto dbt: trusted (limpeza) e refined (fato + dimensões)
 dlt/          pipeline de ingestão dos CSVs (data/) para o Iceberg
@@ -274,7 +361,12 @@ com o builder padrão. As limitações: **(i)** as métricas precisam ser escrit
 `MEASURE(nome_da_medida)` (a forma canônica da SQL API; as colunas agregadas
 “naturais” não existem como colunas de banco); **(ii)** sem joins ad-hoc entre cubos —
 você consulta o que o modelo semântico expõe. Um dashboard que funcionava no Trino pode
-precisar de ajuste: as colunas que entraram no dataset são as **governadas**.
+precisar de ajuste: as colunas que entraram no dataset são as **governadas**;
+**(iii)** o "Series limit" (top N séries) só funciona se a métrica que ordena as
+séries for a mesma do gráfico. Com métricas diferentes (ex.: nota média das séries
+com mais títulos), o Cube recusa o `ORDER BY` por uma medida fora do `SELECT`, ou
+ignora em silêncio a subconsulta do top N. Por isso o dashboard do catálogo filtra
+uma lista fixa de gêneros (`TOP_GENRES` no bootstrap).
 
 ### País tem um balde nulo
 
@@ -302,7 +394,8 @@ server e o cliente `mc` (usado para criar os buckets).
 
 ## Personalizar
 
-- Novos fluxos: adicione DAGs em `airflow/dags` (a imagem do dlt é `my-dlt-pipeline`).
+- Novos fluxos: adicione DAGs em `airflow/dags` (imagens `my-dlt-pipeline` e
+  `movies_transform`; `env_file="dlt.env"` ou `"dbt.env"`, como na `movies_daily`).
 - Novos dados: solte o CSV em `dlt/data/` e rode `make dlt-run DLT_TABLE=<nome>`; depois
   declare a tabela como *source* no dbt (`dbt/movies_transform/models/trusted/`).
 - Novos modelos dbt: `make dbt-shell` abre um shell na imagem com o projeto montado
@@ -310,7 +403,8 @@ server e o cliente `mc` (usado para criar os buckets).
 - Novas métricas/dimensões: edite `cube/model/` e reinicie o serviço (`docker compose
   restart cube`).
 - Contas e senhas locais: `airflow/.env`, `trino/.env`, `dlt/.env.docker`,
-  `dbt/.env`, `cube/.env` (todas com um `.sample`/par correspondente).
+  `dbt/.env`, `cube/.env` (todas com um `.sample`/par correspondente). O `.env` da raiz
+  (`DOCKER_GID`) é da máquina e fica fora do git.
 
 ## Contribuindo
 

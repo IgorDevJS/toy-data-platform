@@ -1,0 +1,22 @@
+# Fase 4 · extract_movies lendo o dlt/.env.docker (env_file), com o _dlt_load_id
+# airflow tasks test: roda uma tarefa da DAG sem gravar estado no banco do Airflow
+# 2026-11-16 19:58:12
+
+$ airflow tasks test extract_movies ingestion-movies-meta_critic
+2026-11-16T22:58:20.567664Z [info     ] Task started                   [airflow.api_fastapi.execution_api.routes.task_instances] hostname=9720768812f8 loc=task_instances.py:199 previous_state=queued ti_id=01a1e695-26e0-72f1-9fd4-1a07432107ab
+2026-11-16T22:58:20.668778Z [info     ] Starting docker container from image my-dlt-pipeline:latest [airflow.task.operators.airflow.providers.docker.operators.docker.DockerOperator] loc=docker.py:367
+2026-11-16T22:58:32.000230Z [info     ] meta_critic: 16290  | Time: 0.01s | Rate: 1478708.66/s [airflow.task.operators.airflow.providers.docker.operators.docker.DockerOperator] loc=docker.py:71
+2026-11-16T22:58:32.000873Z [info     ] meta_critic: 16290  | Time: 0.00s | Rate: 3687673.37/s [airflow.task.operators.airflow.providers.docker.operators.docker.DockerOperator] loc=docker.py:71
+2026-11-16T22:58:32.001073Z [info     ] -------------- Load iceberg_filesystem_csv in 1794869908.3375604 --------------- [airflow.task.operators.airflow.providers.docker.operators.docker.DockerOperator] loc=docker.py:71
+2026-11-16T22:58:32.001383Z [info     ] -------------- Load iceberg_filesystem_csv in 1794869908.3375604 --------------- [airflow.task.operators.airflow.providers.docker.operators.docker.DockerOperator] loc=docker.py:71
+2026-11-16T22:58:32.001636Z [info     ] -------------- Load iceberg_filesystem_csv in 1794869908.3375604 --------------- [airflow.task.operators.airflow.providers.docker.operators.docker.DockerOperator] loc=docker.py:71
+2026-11-16T22:58:32.002002Z [info     ] 1 load package(s) were loaded to destination filesystem and into dataset raw_movies [airflow.task.operators.airflow.providers.docker.operators.docker.DockerOperator] loc=docker.py:71
+2026-11-16T22:58:32.002331Z [info     ] - meta_critic: 16290 row(s)    [airflow.task.operators.airflow.providers.docker.operators.docker.DockerOperator] loc=docker.py:71
+2026-11-16T22:58:32.917618Z [info     ] Pushing xcom                   [task] loc=task_runner.py:1450 ti=RuntimeTaskInstance(id=UUID('01a1e695-26e0-72f1-9fd4-1a07432107ab'), task_id='ingestion-movies-meta_critic', dag_id='extract_movies', run_id='__airflow_temporary_run_2026-11-16T22:58:16.892128+00:00__', try_number=0, dag_version_id=UUID('01a1d68d-ad8e-7493-b749-5ad09a281bdd'), map_index=-1, hostname='9720768812f8', context_carrier=None, task=<Task(DockerOperator): ingestion-movies-meta_critic>, max_tries=0, start_date=datetime.datetime(2026, 11, 16, 22, 58, 17, 611880, tzinfo=datetime.timezone.utc), end_date=None, state=<TaskInstanceState.RUNNING: 'running'>, is_mapped=False, rendered_map_index=None)
+2026-11-16T22:58:32.946907Z [info     ] Task instance state updated    [airflow.api_fastapi.execution_api.routes.task_instances] loc=task_instances.py:424 new_state=success rows_affected=1 ti_id=01a1e695-26e0-72f1-9fd4-1a07432107ab
+
+$ trino --execute "<última carga da meta_critic>"
+ linhas |            carga            | sem_load_id 
+--------+-----------------------------+-------------
+  16290 | 2026-11-16 22:58:28.338 UTC |           0 
+(1 row)

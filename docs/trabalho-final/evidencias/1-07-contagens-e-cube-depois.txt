@@ -1,0 +1,180 @@
+# Contagens depois da Fase 1
+$ trino --execute "select count(*) linhas, count(distinct title_key) chaves from refined.ml.fct_titles"  (2026-11-13 18:09:28)
+ linhas | chaves 
+--------+--------
+   1813 |   1813 
+(1 row)
+
+$ trino --execute "select count(*) linhas, count(distinct title_key) chaves, count_if(has_critic_rating) com_nota, count_if(added_year is null) sem_ano_de_entrada from refined.ml.fct_catalog"  (2026-11-13 18:09:30)
+ linhas | chaves | com_nota | sem_ano_de_entrada 
+--------+--------+----------+--------------------
+   8802 |   8802 |     1813 |                 10 
+(1 row)
+
+$ trino --execute "select (select count(*) from refined.ml.dim_genre) generos, (select count(*) from refined.ml.dim_country) paises, (select count(*) from refined.ml.dim_year) anos, (select count(distinct title_key) from refined.ml.bridge_title_genre) ponte_genero_titulos, (select count(distinct title_key) from refined.ml.bridge_title_country) ponte_pais_titulos"  (2026-11-13 18:09:33)
+ generos | paises | anos | ponte_genero_titulos | ponte_pais_titulos 
+---------+--------+------+----------------------+--------------------
+      42 |    122 |   74 |                 8802 |               7971 
+(1 row)
+
+$ trino --execute "select added_year, count(*) titulos, count_if(has_critic_rating) com_nota from refined.ml.fct_catalog group by 1 order by 1"  (2026-11-13 18:09:35)
+ added_year | titulos | com_nota 
+------------+---------+----------
+       2008 |       2 |        0 
+       2009 |       2 |        1 
+       2010 |       1 |        0 
+       2011 |      13 |        0 
+       2012 |       3 |        2 
+       2013 |      11 |        1 
+       2014 |      24 |        4 
+       2015 |      82 |        9 
+       2016 |     428 |       68 
+       2017 |    1188 |      192 
+       2018 |    1646 |      258 
+       2019 |    2015 |      456 
+       2020 |    1879 |      444 
+       2021 |    1498 |      378 
+       NULL |      10 |        0 
+(15 rows)
+
+# Regressão do Cube: as mesmas 3 consultas de 1-01 (tipo, gênero, país) rodadas de novo.
+$ diff <(grep -v '^\$' 1-01-cube-antes-por-genero.txt) <(grep -v '^\$' depois.txt) && echo IGUAIS
+IGUAIS: 137 linhas, nenhuma diferença
+
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT title_type, MEASURE(count_titles) AS titulos, round(MEASURE(avg_rating)::numeric, 3) AS nota FROM titles_overview GROUP BY 1 ORDER BY 1"  (2026-11-13 18:09:16)
+ title_type | titulos | nota  
+------------+---------+-------
+ Movie      |    1673 | 6.627
+ TV Show    |     140 | 6.597
+(2 rows)
+
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT genre, MEASURE(count_titles) AS titulos, round(MEASURE(avg_rating)::numeric, 3) AS nota, MEASURE(total_votes) AS votos FROM titles_overview GROUP BY 1 ORDER BY 1"  (2026-11-13 18:09:20)
+           genre           | titulos | nota  | votos  
+---------------------------+---------+-------+--------
+ Action & Adventure        |     351 | 6.592 | 110355
+ Anime Features            |       8 |     7 |    471
+ Anime Series              |       2 |  4.95 |     37
+ British TV Shows          |      25 | 7.161 |   2931
+ Children & Family Movies  |     154 | 6.568 |  28592
+ Classic & Cult TV         |       3 | 6.633 |    594
+ Classic Movies            |      58 | 7.623 |  17140
+ Comedies                  |     485 | 6.471 |  84170
+ Crime TV Shows            |      32 | 7.086 |   6020
+ Cult Movies               |      43 | 7.598 |  18089
+ Documentaries             |     159 | 6.871 |   8271
+ Docuseries                |      12 |  7.34 |   1263
+ Dramas                    |     759 | 6.773 | 123096
+ Faith & Spirituality      |      15 |   5.9 |    847
+ Horror Movies             |     129 | 6.294 |  28097
+ Independent Movies        |     335 | 6.787 |  44424
+ International Movies      |     309 | 6.757 |  45908
+ International TV Shows    |      79 | 6.621 |   7957
+ Kids' TV                  |       8 |   6.7 |    940
+ Korean TV Shows           |       6 |   6.6 |    120
+ LGBTQ Movies              |      37 | 6.334 |   3324
+ Music & Musicals          |      66 | 6.853 |  17082
+ Reality TV                |       6 | 4.783 |    284
+ Romantic Movies           |     176 | 6.412 |  20354
+ Romantic TV Shows         |      19 |  6.55 |   1475
+ Sci-Fi & Fantasy          |     127 |  6.47 |  64328
+ Science & Nature TV       |       4 |   7.2 |    374
+ Spanish-Language TV Shows |       5 |   6.7 |    453
+ Sports Movies             |      50 | 6.956 |   6197
+ Stand-Up Comedy           |       6 |  6.46 |    101
+ TV Action & Adventure     |      19 | 6.844 |   3098
+ TV Comedies               |      29 | 6.308 |   1661
+ TV Dramas                 |      62 | 6.481 |   6798
+ TV Horror                 |      12 | 6.418 |   3375
+ TV Mysteries              |      15 | 6.993 |   3167
+ TV Sci-Fi & Fantasy       |       6 |  6.12 |   1342
+ TV Shows                  |       2 |   7.2 |    155
+ TV Thrillers              |       5 | 6.675 |   1023
+ Teen TV Shows             |       1 |   6.6 |     62
+ Thrillers                 |     232 | 6.434 |  45021
+(40 rows)
+
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT country, MEASURE(count_titles) AS titulos, round(MEASURE(avg_rating)::numeric, 3) AS nota FROM titles_overview GROUP BY 1 ORDER BY 1"  (2026-11-13 18:09:24)
+       country        | titulos | nota  
+----------------------+---------+-------
+ Argentina            |       6 | 7.075
+ Australia            |      45 | 6.767
+ Austria              |       2 |   7.2
+ Bahamas              |       1 |   8.8
+ Belgium              |      36 | 6.356
+ Brazil               |      11 | 6.936
+ Bulgaria             |       2 |  6.45
+ Burkina Faso         |       1 |   5.9
+ Cambodia             |       4 | 6.975
+ Canada               |     128 | 6.314
+ Chile                |       6 |  6.44
+ China                |      47 | 6.374
+ Colombia             |       1 |   5.3
+ Croatia              |       1 |      
+ Czech Republic       |       8 | 6.838
+ Denmark              |      16 | 6.671
+ Egypt                |      10 | 7.013
+ Ethiopia             |       1 |   5.9
+ Finland              |       3 |   7.8
+ France               |     147 | 6.706
+ Georgia              |       1 |   7.4
+ Germany              |      92 | 7.073
+ Ghana                |       1 |   5.9
+ Greece               |       6 |  6.75
+ Hong Kong            |      27 | 6.654
+ Hungary              |       5 |   6.9
+ Iceland              |       3 |     6
+ India                |      54 | 6.785
+ Indonesia            |       9 |   5.8
+ Iran                 |       4 | 7.375
+ Ireland              |      17 | 6.729
+ Israel               |      10 | 6.543
+ Italy                |      26 | 6.813
+ Japan                |      29 | 7.079
+ Jordan               |       3 | 6.133
+ Kenya                |       2 |  7.15
+ Kuwait               |       1 |      
+ Lebanon              |       1 |   7.3
+ Luxembourg           |       8 | 6.871
+ Malawi               |       1 |   7.7
+ Malta                |       2 |     6
+ Mexico               |      22 |  6.99
+ Morocco              |       1 |   5.1
+ Mozambique           |       1 |   8.3
+ Namibia              |       1 |      
+ Nepal                |       1 |     5
+ Netherlands          |      12 |  6.24
+ New Zealand          |      15 | 7.221
+ Nigeria              |       7 | 7.325
+ Norway               |       9 | 6.933
+ Pakistan             |       2 |   6.3
+ Peru                 |       2 |      
+ Philippines          |       7 |  7.02
+ Poland               |       8 | 6.129
+ Portugal             |       2 |   5.5
+ Qatar                |       4 | 7.267
+ Romania              |       5 | 6.825
+ Russia               |       6 |  6.35
+ Saudi Arabia         |       1 |   7.2
+ Senegal              |       1 |   6.4
+ Serbia               |       3 |   6.1
+ Singapore            |       9 |  6.78
+ Somalia              |       1 |   6.6
+ South Africa         |      11 | 6.867
+ South Korea          |      20 | 6.733
+ Spain                |      27 | 6.868
+ Sudan                |       1 |   6.6
+ Sweden               |      12 | 6.918
+ Switzerland          |      10 |   6.9
+ Taiwan               |       7 |  6.85
+ Thailand             |       5 |  6.88
+ Turkey               |       5 | 7.525
+ Ukraine              |       1 |   6.4
+ United Arab Emirates |       9 | 6.511
+ United Kingdom       |     309 | 6.842
+ United States        |    1380 | 6.603
+ Uruguay              |       3 |     6
+ Vietnam              |       1 |   6.5
+ Zimbabwe             |       2 |      
+                      |      36 | 6.374
+(80 rows)
+

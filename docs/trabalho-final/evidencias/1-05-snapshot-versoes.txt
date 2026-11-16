@@ -1,0 +1,63 @@
+# Prova do snapshot titles_snapshot (SCD tipo 2, strategy: check, check_cols: [rating, votes])
+# 1) Depois do primeiro make dbt-build: 1813 versões abertas, uma por título
+$ trino --execute "select count(*) linhas, count(dbt_valid_to) fechadas, count(distinct title_key) titulos from refined.snapshots.titles_snapshot"  (2026-11-13 18:06:13)
+ linhas | fechadas | titulos 
+--------+----------+---------
+   1813 |        0 |    1813 
+(1 row)
+
+$ trino --execute "select title_key, rating, votes, dbt_valid_from, dbt_valid_to from refined.snapshots.titles_snapshot where title_key = 'the irishman' order by dbt_valid_from"  (2026-11-13 18:06:16)
+  title_key   | rating | votes |         dbt_valid_from         | dbt_valid_to 
+--------------+--------+-------+--------------------------------+--------------
+ the irishman |    8.1 |  1371 | 2026-11-13 21:05:24.927000 UTC | NULL         
+(1 row)
+
+# 2) Altera a nota de The Irishman no CSV do Metacritic (8.1 -> 9.0), reingere e reconstrói
+$ git diff --stat dlt/data/meta_critic.csv
+ dlt/data/meta_critic.csv | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+",8.1,"1,371",Martin Scorsese
+",9.0,"1,371",Martin Scorsese
+$ make dlt-run DLT_TABLE=meta_critic  (2026-11-13 18:06:18)
+Load package 1794603985.9740558 is LOADED and contains no failed jobs
+- meta_critic: 16290 row(s)
+$ make dbt-build  (2026-11-13 18:06:30)
+21:06:35  Found 12 models, 1 seed, 48 data tests, 1 snapshot, 2 sources, 500 macros
+21:06:45  27 of 61 START snapshot refined.snapshots.titles_snapshot ...................... [RUN]
+21:06:48  27 of 61 OK snapshotted refined.snapshots.titles_snapshot ...................... [MERGE (2 rows) in 2.93s]
+21:06:51  40 of 61 START test not_null_titles_snapshot_title_key ......................... [RUN]
+21:06:51  40 of 61 PASS not_null_titles_snapshot_title_key ............................... [PASS in 0.16s]
+21:06:56  Finished running 1 incremental model, 1 seed, 1 snapshot, 10 table models, 48 data tests in 0 hours 0 minutes and 21.47 seconds (21.47s).
+21:06:56  Done. PASS=61 WARN=0 ERROR=0 SKIP=0 NO-OP=0 REUSED=0 TOTAL=61
+$ trino --execute "select title_key, rating, votes, dbt_valid_from, dbt_valid_to from refined.snapshots.titles_snapshot where title_key = 'the irishman' order by dbt_valid_from"  (2026-11-13 18:06:58)
+  title_key   | rating | votes |         dbt_valid_from         |          dbt_valid_to          
+--------------+--------+-------+--------------------------------+--------------------------------
+ the irishman |    8.1 |  1371 | 2026-11-13 21:05:24.927000 UTC | 2026-11-13 21:06:46.235000 UTC 
+ the irishman |    9.0 |  1371 | 2026-11-13 21:06:46.235000 UTC | NULL                           
+(2 rows)
+
+
+# 3) Desfaz a alteração no CSV (git checkout), reingere e reconstrói: a nota original volta como 3ª versão
+$ git checkout dlt/data/meta_critic.csv && git diff --stat dlt/data/meta_critic.csv
+Updated 1 path from the index
+(diff vazio)
+$ make dlt-run DLT_TABLE=meta_critic  (2026-11-13 18:07:08)
+Load package 1794604036.3381875 is LOADED and contains no failed jobs
+- meta_critic: 16290 row(s)
+$ make dbt-build  (2026-11-13 18:07:20)
+21:07:36  27 of 61 OK snapshotted refined.snapshots.titles_snapshot ...................... [MERGE (2 rows) in 1.99s]
+21:07:43  Done. PASS=61 WARN=0 ERROR=0 SKIP=0 NO-OP=0 REUSED=0 TOTAL=61
+$ trino --execute "select title_key, rating, votes, dbt_valid_from, dbt_valid_to from refined.snapshots.titles_snapshot where title_key = 'the irishman' order by dbt_valid_from"  (2026-11-13 18:07:45)
+  title_key   | rating | votes |         dbt_valid_from         |          dbt_valid_to          
+--------------+--------+-------+--------------------------------+--------------------------------
+ the irishman |    8.1 |  1371 | 2026-11-13 21:05:24.927000 UTC | 2026-11-13 21:06:46.235000 UTC 
+ the irishman |    9.0 |  1371 | 2026-11-13 21:06:46.235000 UTC | 2026-11-13 21:07:35.309000 UTC 
+ the irishman |    8.1 |  1371 | 2026-11-13 21:07:35.309000 UTC | NULL                           
+(3 rows)
+
+$ trino --execute "select count(*) linhas, count(dbt_valid_to) fechadas, count(distinct title_key) titulos, count_if(dbt_valid_to is null) atuais from refined.snapshots.titles_snapshot"  (2026-11-13 18:07:47)
+ linhas | fechadas | titulos | atuais 
+--------+----------+---------+--------
+   1815 |        2 |    1813 |   1813 
+(1 row)
+

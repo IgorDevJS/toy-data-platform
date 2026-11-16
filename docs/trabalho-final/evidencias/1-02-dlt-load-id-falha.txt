@@ -1,0 +1,39 @@
+$ make dlt-run DLT_TABLE=netflix_titles  (2026-11-13 17:57:10)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/pyiceberg/table/update/schema.py", line 875, in struct
+    self._add_column(partner_id, fields[pos])
+  File "/usr/local/lib/python3.11/site-packages/pyiceberg/table/update/schema.py", line 889, in _add_column
+    self.update_schema.add_column(path=path, field_type=field.field_type, required=field.required, doc=field.doc)
+  File "/usr/local/lib/python3.11/site-packages/pyiceberg/table/update/schema.py", line 238, in add_column
+    raise ValueError(f"Incompatible change: cannot add required column: {'.'.join(path)}")
+ValueError: Incompatible change: cannot add required column: _dlt_load_id
+Pending packages are left in the pipeline and will be re-tried on the next pipeline run. If you pass new data to extract to next run, it will be ignored. Run `dlt pipeline iceberg_filesystem_csv info` for more information or `dlt pipeline iceberg_filesystem_csv abort-packages` to abort pending packages.
+Note: If the pipeline working directory is on ephemeral storage (e.g. dltHub platform jobs, serverless functions, or CI runners without persistent volumes), pending packages are lost and not retried.
+WARNING: Package 1794603439.6986356 is partially loaded. Data in the destination could be modified by one of the completed load jobs while others were not yet executed or were retried, so the destination may be in an inconsistent state. We recommend that you retry the load or review the incident before dropping pending packages. See https://dlthub.com/docs/running-in-production/running#partially-loaded-packages for details.
+make: *** [Makefile:45: dlt-run] Erro 1
+$ make dlt-run DLT_TABLE=meta_critic  (2026-11-13 17:57:28)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/pyiceberg/table/update/schema.py", line 875, in struct
+    self._add_column(partner_id, fields[pos])
+  File "/usr/local/lib/python3.11/site-packages/pyiceberg/table/update/schema.py", line 889, in _add_column
+    self.update_schema.add_column(path=path, field_type=field.field_type, required=field.required, doc=field.doc)
+  File "/usr/local/lib/python3.11/site-packages/pyiceberg/table/update/schema.py", line 238, in add_column
+    raise ValueError(f"Incompatible change: cannot add required column: {'.'.join(path)}")
+ValueError: Incompatible change: cannot add required column: _dlt_load_id
+Pending packages are left in the pipeline and will be re-tried on the next pipeline run. If you pass new data to extract to next run, it will be ignored. Run `dlt pipeline iceberg_filesystem_csv info` for more information or `dlt pipeline iceberg_filesystem_csv abort-packages` to abort pending packages.
+Note: If the pipeline working directory is on ephemeral storage (e.g. dltHub platform jobs, serverless functions, or CI runners without persistent volumes), pending packages are lost and not retried.
+WARNING: Package 1794603454.947688 is partially loaded. Data in the destination could be modified by one of the completed load jobs while others were not yet executed or were retried, so the destination may be in an inconsistent state. We recommend that you retry the load or review the incident before dropping pending packages. See https://dlthub.com/docs/running-in-production/running#partially-loaded-packages for details.
+make: *** [Makefile:45: dlt-run] Erro 1
+$ make dlt-run DLT_TABLE=imdb_top_1000  (2026-11-13 17:57:43)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/pyiceberg/table/update/schema.py", line 875, in struct
+    self._add_column(partner_id, fields[pos])
+  File "/usr/local/lib/python3.11/site-packages/pyiceberg/table/update/schema.py", line 889, in _add_column
+    self.update_schema.add_column(path=path, field_type=field.field_type, required=field.required, doc=field.doc)
+  File "/usr/local/lib/python3.11/site-packages/pyiceberg/table/update/schema.py", line 238, in add_column
+    raise ValueError(f"Incompatible change: cannot add required column: {'.'.join(path)}")
+ValueError: Incompatible change: cannot add required column: _dlt_load_id
+Pending packages are left in the pipeline and will be re-tried on the next pipeline run. If you pass new data to extract to next run, it will be ignored. Run `dlt pipeline iceberg_filesystem_csv info` for more information or `dlt pipeline iceberg_filesystem_csv abort-packages` to abort pending packages.
+Note: If the pipeline working directory is on ephemeral storage (e.g. dltHub platform jobs, serverless functions, or CI runners without persistent volumes), pending packages are lost and not retried.
+WARNING: Package 1794603470.5767841 is partially loaded. Data in the destination could be modified by one of the completed load jobs while others were not yet executed or were retried, so the destination may be in an inconsistent state. We recommend that you retry the load or review the incident before dropping pending packages. See https://dlthub.com/docs/running-in-production/running#partially-loaded-packages for details.
+make: *** [Makefile:45: dlt-run] Erro 1

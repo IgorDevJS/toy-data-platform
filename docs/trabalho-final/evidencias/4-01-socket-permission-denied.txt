@@ -1,0 +1,22 @@
+# Fase 4 · O Airflow não alcançava o Docker do host (antes da correção)
+# 2026-11-16 19:37:35
+
+$ ls -l /var/run/docker.sock   (host)
+srw-rw---- 1 root docker 0 nov 16 00:45 /var/run/docker.sock
+
+$ docker exec airflow_scheduler id
+uid=50000(airflow) gid=0(root) groups=0(root)
+
+$ docker exec airflow_scheduler python -c "import docker; docker.from_env().version()"
+  File "/home/airflow/.local/lib/python3.11/site-packages/docker/api/client.py", line 230, in _retrieve_server_version
+    raise DockerException(
+docker.errors.DockerException: Error while fetching server API version: ('Connection aborted.', PermissionError(13, 'Permission denied'))
+
+$ docker compose up -d airflow-webserver airflow-scheduler airflow-dag-processor   (com group_add DOCKER_GID)
+# Depois da correção (2026-11-16 19:38:45)
+$ cat .env   (raiz, fora do git)
+DOCKER_GID=984
+$ docker exec airflow_scheduler id
+uid=50000(airflow) gid=0(root) groups=0(root),984
+$ docker exec airflow_scheduler python -c "import docker; print(docker.from_env().version()[\"Version\"])"
+28.5.1

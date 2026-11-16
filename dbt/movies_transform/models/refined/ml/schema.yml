@@ -2,10 +2,13 @@ version: 2
 
 models:
   - name: dim_year
-    description: "Dimensão de tempo: um ano de lançamento (`year_key`) por linha."
+    description: >
+      Dimensão de tempo: um ano do calendário (`year_key`) por linha. Dimensão
+      role-playing: serve ao ano de lançamento (`year_key` dos fatos) e ao ano de entrada
+      no catálogo (`added_year`), e por isso é a união dos dois.
     columns:
       - name: year_key
-        description: "Ano de lançamento do título (chave natural)."
+        description: "Ano do calendário (chave natural)."
         tests:
           - unique
           - not_null
@@ -43,9 +46,10 @@ models:
 
   - name: bridge_title_genre
     description: >
-      Ponte título ↔ gênero, uma linha por par (título, gênero). Um título com N
-      gêneros aparece N vezes; fatiar uma medida por gênero filtra pela ponte em vez
-      de agregar a lista da origem, então nenhum título é contado duas vezes pelo mesmo gênero.
+      Ponte título ↔ gênero, uma linha por par (título, gênero), para o catálogo inteiro.
+      Um título com N gêneros aparece N vezes; fatiar uma medida por gênero filtra pela
+      ponte em vez de agregar a lista da origem, então nenhum título é contado duas vezes
+      pelo mesmo gênero. Serve aos dois fatos: o `fct_titles` é um subconjunto do catálogo.
     columns:
       - name: title_genre_key
         description: "Chave do par título-gênero (`title_key|genre_key`)."
@@ -53,12 +57,12 @@ models:
           - unique
           - not_null
       - name: title_key
-        description: "Título, referência a `fct_titles`."
+        description: "Título, referência a `fct_catalog` (o catálogo inteiro)."
         tests:
           - not_null
           - relationships:
               arguments:
-                to: ref('fct_titles')
+                to: ref('fct_catalog')
                 field: title_key
       - name: genre_key
         description: "Gênero, referência a `dim_genre`."
@@ -71,8 +75,9 @@ models:
 
   - name: bridge_title_country
     description: >
-      Ponte título ↔ país, uma linha por par (título, país). Um título produzido em N
-      países aparece N vezes. Títulos sem país na origem não entram na ponte.
+      Ponte título ↔ país, uma linha por par (título, país), para o catálogo inteiro.
+      Um título produzido em N países aparece N vezes. Títulos sem país na origem não
+      entram na ponte.
     columns:
       - name: title_country_key
         description: "Chave do par título-país (`title_key|country_key`)."
@@ -80,12 +85,12 @@ models:
           - unique
           - not_null
       - name: title_key
-        description: "Título, referência a `fct_titles`."
+        description: "Título, referência a `fct_catalog` (o catálogo inteiro)."
         tests:
           - not_null
           - relationships:
               arguments:
-                to: ref('fct_titles')
+                to: ref('fct_catalog')
                 field: title_key
       - name: country_key
         description: "País, referência a `dim_country`."
@@ -108,6 +113,11 @@ models:
         tests:
           - unique
           - not_null
+          # todo título com nota é um título do catálogo
+          - relationships:
+              arguments:
+                to: ref('fct_catalog')
+                field: title_key
       - name: title
         description: "Título para exibição, como veio do Netflix."
         tests:
@@ -128,9 +138,80 @@ models:
               arguments:
                 to: ref('dim_type')
                 field: type_key
+      - name: added_year
+        description: "Ano de entrada no catálogo (de `date_added`), referência a `dim_year`."
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_year')
+                field: year_key
       - name: rating
         description: "Nota da crítica (medida)."
       - name: votes
         description: "Total de pessoas que votaram (medida)."
       - name: duration_minutes
         description: "Duração em minutos para filmes; nulo para TV Show (medida)."
+
+  - name: fct_catalog
+    description: >
+      Fato do catálogo no grão de um título (`title_key`): todos os títulos da Netflix
+      (~8800), com ou sem nota da crítica. É a base da métrica "títulos do catálogo",
+      diferente de "títulos com nota da crítica" (`fct_titles`, 1813). `has_critic_rating`
+      marca os títulos que também estão no `fct_titles`.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: title_key
+        description: "Chave natural do título, normalizado (minúsculas, sem espaços nas bordas)."
+        data_type: varchar
+        constraints:
+          - type: not_null
+        tests:
+          - unique
+          - not_null
+      - name: title
+        description: "Título para exibição, como veio do Netflix."
+        data_type: varchar
+        tests:
+          - not_null
+      - name: type_key
+        description: "Tipo do título, referência a `dim_type`."
+        data_type: varchar
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_type')
+                field: type_key
+      - name: year_key
+        description: "Ano de lançamento, referência a `dim_year`."
+        data_type: bigint
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_year')
+                field: year_key
+      - name: date_added
+        description: "Data em que o título entrou no catálogo da Netflix."
+        data_type: date
+      - name: added_year
+        description: "Ano de entrada no catálogo, referência a `dim_year` (dimensão role-playing)."
+        data_type: bigint
+        tests:
+          # a fonte tem exatamente 10 títulos sem data; mais que isso é a conversão de data
+          # perdendo linhas (ex.: um formato novo que o DATE_PARSE não reconhece)
+          - not_null:
+              config:
+                error_if: ">10"
+                warn_if: ">10"
+          - relationships:
+              arguments:
+                to: ref('dim_year')
+                field: year_key
+      - name: has_critic_rating
+        description: "Verdadeiro se o título tem nota da crítica, ou seja, está no `fct_titles`."
+        data_type: boolean
+        tests:
+          - not_null

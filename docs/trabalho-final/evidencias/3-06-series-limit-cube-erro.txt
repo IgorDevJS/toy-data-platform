@@ -1,0 +1,66 @@
+# Fase 3 · "Top 10 gêneros" pelo series_limit do Superset × SQL API do Cube (2026-11-16)
+#
+# 1ª versão dos gráficos de linha: groupby genre com series_limit=10 e
+# series_limit_metric=count_catalog_titles (os mesmos 10 gêneros nos dois gráficos).
+
+## Gráfico "Títulos adicionados" (métrica = a própria count_catalog_titles): 200, 7 linhas, gêneros certos
+SELECT year_added AS year_added, genre AS genre, MEASURE(count_catalog_titles) AS count_catalog_titles
+FROM public.catalog_overview JOIN (SELECT genre AS genre__, MEASURE(count_catalog_titles) AS mme_inner__
+FROM public.catalog_overview
+WHERE year_added >= 2015 GROUP BY genre ORDER BY MEASURE(count_catalog_titles) DESC
+ LIMIT 10) AS series_limit ON genre = genre__
+WHERE year_added >= 2015 GROUP BY year_added, genre ORDER BY count_catalog_titles DESC
+ LIMIT 1000;
+
+## Gráfico "Nota média" (métrica = avg_rating, séries ordenadas por count_catalog_titles): 400
+Error: Planning Error: Initial planning error: Error during planning: Schema contains duplicate
+unqualified field name 'measure(catalog_overview.count_catalog_titles)'
+QUERY: SELECT year_added AS year_added, genre AS genre, MEASURE(avg_rating) AS avg_rating
+FROM public.catalog_overview JOIN (SELECT genre AS genre__, MEASURE(avg_rating) AS mme_inner__
+FROM public.catalog_overview WHERE year_added >= 2015 GROUP BY genre
+ORDER BY MEASURE(count_catalog_titles) DESC LIMIT 10) AS series_limit ON genre = genre__
+WHERE year_added >= 2015 GROUP BY year_added, genre ORDER BY MEASURE(count_catalog_titles) DESC LIMIT 1000
+
+## Isolando o problema direto na SQL API (psql -h cube -p 15432)
+--- 1: só a subconsulta (seleciona a nota, ordena pela contagem)
+SELECT genre AS genre__, MEASURE(avg_rating) AS mme_inner__ FROM public.catalog_overview
+WHERE year_added >= 2015 GROUP BY genre ORDER BY MEASURE(count_catalog_titles) DESC LIMIT 3
+ERROR:  Database Execution Error: line 21:247: Column 'catalog.title_key' cannot be resolved
+
+--- 2: sem join, ordena por medida que não está no SELECT
+SELECT year_added, genre, MEASURE(avg_rating) AS avg_rating FROM public.catalog_overview
+WHERE year_added >= 2015 GROUP BY year_added, genre ORDER BY MEASURE(count_catalog_titles) DESC LIMIT 3
+ERROR:  Database Execution Error: line 21:462: Column 'catalog.title_key' cannot be resolved
+
+--- 3: com join, mas cada ORDER BY só usa medida que está no próprio SELECT
+SELECT year_added, genre, MEASURE(avg_rating) AS avg_rating FROM public.catalog_overview
+JOIN (SELECT genre AS genre__, MEASURE(count_catalog_titles) AS mme_inner__ FROM public.catalog_overview
+      WHERE year_added >= 2015 GROUP BY genre ORDER BY MEASURE(count_catalog_titles) DESC LIMIT 10) AS series_limit
+  ON genre = genre__
+WHERE year_added >= 2015 GROUP BY year_added, genre ORDER BY avg_rating DESC LIMIT 3
+ year_added |      genre      | avg_rating
+------------+-----------------+------------
+       2021 | Korean TV Shows |
+(...)   -> roda, mas aparecem gêneros fora do top 10 (Korean TV Shows, Kids' TV)
+
+--- 3b: a mesma consulta 3, contando as linhas
+SELECT count(*) FROM (<consulta 3 sem ORDER BY/LIMIT>) t
+ count
+-------
+   283          <- todas as combinações ano × gênero (o mesmo 283 da Fase 2, 2-02): o join foi ignorado
+
+--- 3c: o mesmo join, mas com a MESMA medida dentro e fora (count_catalog_titles)
+SELECT DISTINCT genre FROM (SELECT year_added, genre, MEASURE(count_catalog_titles) AS c FROM ... JOIN (<top 10>) ...) t
+(10 rows)       <- Documentaries, International TV Shows, International Movies, Independent Movies, Comedies,
+                   Dramas, Action & Adventure, TV Dramas, Children & Family Movies, Romantic Movies
+
+## Conclusão
+Dois problemas na SQL API do Cube com o SQL que o Superset gera para o series_limit:
+(a) ORDER BY por uma medida que não está no SELECT gera, para o Trino, SQL que referencia uma
+    coluna inexistente ('catalog.title_key' cannot be resolved): erro visível;
+(b) pior: um join com subconsulta de OUTRA medida roda, mas o Cube descarta o join em silêncio e
+    devolve todos os gêneros (283 linhas). Com a mesma medida dentro e fora, o join é respeitado.
+É o SQL que o Superset gera quando a métrica do gráfico (avg_rating) é diferente da métrica que
+ordena as séries (count_catalog_titles). Decisão: lista fixa dos 10 gêneros (TOP_GENRES no bootstrap), aplicada
+como filtro "genre IN (...)" nos dois gráficos de linha; a tabela calcula o top 10 pelo Cube e
+confere a lista (3-07).

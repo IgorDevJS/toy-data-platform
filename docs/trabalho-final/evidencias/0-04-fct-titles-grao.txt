@@ -1,0 +1,15 @@
+$ docker compose exec trino trino --execute "SELECT count(*), count(DISTINCT title_key) FROM refined.ml.fct_titles"  (2026-11-13 17:18:50)
+Nov 13, 2026 8:18:52 PM org.jline.utils.Log logr
+WARNING: Unable to create a system terminal, creating a dumb terminal (enable debug logging for more information)
+"1813","1813"
+
+$ SHOW TABLES FROM refined.ml
+Nov 13, 2026 8:18:54 PM org.jline.utils.Log logr
+WARNING: Unable to create a system terminal, creating a dumb terminal (enable debug logging for more information)
+"bridge_title_country"
+"bridge_title_genre"
+"dim_country"
+"dim_genre"
+"dim_type"
+"dim_year"
+"fct_titles"

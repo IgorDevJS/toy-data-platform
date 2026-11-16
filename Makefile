@@ -21,6 +21,17 @@ dbt-build: build
 	    $(DBT_IMAGE) \
 	    dbt build --target-path target/prod
 
+# Frescor das fontes (`dbt source freshness`): quanto tempo desde a última carga do dlt,
+# lido do `_dlt_load_id` de cada linha. Fica fora do `dbt build`, que não roda freshness.
+dbt-freshness: build
+	docker run --rm \
+	    -v $(PWD)/dbt/$(DBT_IMAGE):/usr/app/$(DBT_IMAGE) \
+	    --env-file $(PWD)/dbt/.env \
+	    --network $(NETWORK) \
+	    -w /usr/app/$(DBT_IMAGE) \
+	    $(DBT_IMAGE) \
+	    dbt source freshness --target-path target/prod
+
 # Slim CI: em dev, constrói só o que mudou desde o último `make dbt-build` (o manifest
 # de target/prod) e o que depende disso; o resto o `ref()` lê de prod (--defer),
 # mesmo que exista uma cópia velha em dev (--favor-state).
@@ -47,6 +58,16 @@ dlt-run: dlt-build
 	    --network $(NETWORK) \
 	    $(DLT_IMAGE) \
 	    python filesystem_pipeline.py -t $(DLT_TABLE)
+
+# --- Airflow (DAG movies_daily: dlt em paralelo → dbt source freshness → dbt build) ---
+
+# O Airflow não constrói imagem, só dispara containers: as duas imagens precisam existir
+# antes da DAG rodar, e precisam ser reconstruídas depois de mudar o dbt ou o dlt.
+airflow-images: build dlt-build
+
+# Dispara uma execução manual da DAG diária (além da agendada, @daily).
+airflow-run:
+	docker exec airflow_scheduler airflow dags trigger movies_daily
 
 dbt-shell:
 	docker run --rm -v $(PWD)/dbt/$(DBT_IMAGE):/usr/app/$(DBT_IMAGE) \

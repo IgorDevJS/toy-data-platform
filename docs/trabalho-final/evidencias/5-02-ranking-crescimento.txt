@@ -1,0 +1,162 @@
+# Fase 5 · Gêneros que mais cresceram: títulos adicionados em 2015–16 × 2019–20 (SQL API do Cube)
+
+# Duas consultas, uma por janela; a tabela no fim junta as duas (Python, só subtração e divisão).
+# 'part.' = participação do gênero nos títulos adicionados na janela (510 e 3894). Um título
+# tem vários gêneros, então as participações somam mais que 100%.
+
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT genre, MEASURE(count_catalog_titles) AS catalogo FROM catalog_overview WHERE year_added BETWEEN 2015 AND 2016 GROUP BY 1 ORDER BY 2 DESC"  (2026-11-16 20:24:48)
+            genre             | catalogo 
+------------------------------+----------
+ International Movies         |       92
+ International TV Shows       |       88
+ Documentaries                |       81
+ Dramas                       |       77
+ Comedies                     |       60
+ Stand-Up Comedy              |       52
+ TV Dramas                    |       51
+ Kids' TV                     |       49
+ TV Comedies                  |       48
+ Romantic TV Shows            |       43
+ Independent Movies           |       38
+ Docuseries                   |       33
+ Children & Family Movies     |       31
+ Crime TV Shows               |       27
+ British TV Shows             |       25
+ Action & Adventure           |       20
+ Sports Movies                |       19
+ Music & Musicals             |       19
+ Thrillers                    |       16
+ Movies                       |       13
+ Science & Nature TV          |       13
+ Anime Series                 |       13
+ TV Action & Adventure        |       10
+ Horror Movies                |       10
+ Sci-Fi & Fantasy             |        9
+ Korean TV Shows              |        9
+ Romantic Movies              |        8
+ TV Horror                    |        7
+ TV Thrillers                 |        6
+ TV Mysteries                 |        6
+ Spanish-Language TV Shows    |        5
+ Reality TV                   |        5
+ TV Sci-Fi & Fantasy          |        5
+ Anime Features               |        4
+ Teen TV Shows                |        3
+ LGBTQ Movies                 |        3
+ Classic Movies               |        2
+ Classic & Cult TV            |        2
+ TV Shows                     |        2
+ Cult Movies                  |        1
+ Faith & Spirituality         |        1
+ Stand-Up Comedy & Talk Shows |        1
+(42 rows)
+
+
+
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT genre, MEASURE(count_catalog_titles) AS catalogo FROM catalog_overview WHERE year_added BETWEEN 2019 AND 2020 GROUP BY 1 ORDER BY 2 DESC"  (2026-11-16 20:24:52)
+            genre             | catalogo 
+------------------------------+----------
+ International Movies         |     1185
+ Dramas                       |     1099
+ Comedies                     |      836
+ International TV Shows       |      611
+ Action & Adventure           |      372
+ Independent Movies           |      349
+ TV Dramas                    |      327
+ Romantic Movies              |      323
+ Children & Family Movies     |      317
+ Documentaries                |      306
+ Thrillers                    |      268
+ TV Comedies                  |      243
+ Crime TV Shows               |      212
+ Kids' TV                     |      191
+ Horror Movies                |      174
+ Docuseries                   |      169
+ Romantic TV Shows            |      163
+ Music & Musicals             |      150
+ Reality TV                   |      140
+ Sci-Fi & Fantasy             |      117
+ Stand-Up Comedy              |      114
+ British TV Shows             |      106
+ Sports Movies                |       97
+ Anime Series                 |       88
+ TV Action & Adventure        |       83
+ Korean TV Shows              |       82
+ Classic Movies               |       73
+ Spanish-Language TV Shows    |       70
+ LGBTQ Movies                 |       47
+ TV Mysteries                 |       44
+ TV Horror                    |       40
+ TV Sci-Fi & Fantasy          |       38
+ Teen TV Shows                |       37
+ Cult Movies                  |       35
+ Science & Nature TV          |       35
+ Faith & Spirituality         |       30
+ Anime Features               |       28
+ TV Thrillers                 |       26
+ Stand-Up Comedy & Talk Shows |       17
+ Movies                       |       12
+ Classic & Cult TV            |        7
+ TV Shows                     |        5
+(42 rows)
+
+
+
+rank  gênero                      2015-16  2019-20  aumento   part.15-16  part.19-20   Δ p.p.
+   1  International Movies             92     1185    +1093        18.0%       30.4%    +12.4
+   2  Dramas                           77     1099    +1022        15.1%       28.2%    +13.1
+   3  Comedies                         60      836     +776        11.8%       21.5%     +9.7
+   4  International TV Shows           88      611     +523        17.3%       15.7%     -1.6
+   5  Action & Adventure               20      372     +352         3.9%        9.6%     +5.6
+   6  Romantic Movies                   8      323     +315         1.6%        8.3%     +6.7
+   7  Independent Movies               38      349     +311         7.5%        9.0%     +1.5
+   8  Children & Family Movies         31      317     +286         6.1%        8.1%     +2.1
+   9  TV Dramas                        51      327     +276        10.0%        8.4%     -1.6
+  10  Thrillers                        16      268     +252         3.1%        6.9%     +3.7
+  11  Documentaries                    81      306     +225        15.9%        7.9%     -8.0
+  12  TV Comedies                      48      243     +195         9.4%        6.2%     -3.2
+  13  Crime TV Shows                   27      212     +185         5.3%        5.4%     +0.2
+  14  Horror Movies                    10      174     +164         2.0%        4.5%     +2.5
+  15  Kids' TV                         49      191     +142         9.6%        4.9%     -4.7
+  16  Docuseries                       33      169     +136         6.5%        4.3%     -2.1
+  17  Reality TV                        5      140     +135         1.0%        3.6%     +2.6
+  18  Music & Musicals                 19      150     +131         3.7%        3.9%     +0.1
+  19  Romantic TV Shows                43      163     +120         8.4%        4.2%     -4.2
+  20  Sci-Fi & Fantasy                  9      117     +108         1.8%        3.0%     +1.2
+  21  British TV Shows                 25      106      +81         4.9%        2.7%     -2.2
+  22  Sports Movies                    19       97      +78         3.7%        2.5%     -1.2
+  23  Anime Series                     13       88      +75         2.5%        2.3%     -0.3
+  24  Korean TV Shows                   9       82      +73         1.8%        2.1%     +0.3
+  25  TV Action & Adventure            10       83      +73         2.0%        2.1%     +0.2
+  26  Classic Movies                    2       73      +71         0.4%        1.9%     +1.5
+  27  Spanish-Language TV Shows         5       70      +65         1.0%        1.8%     +0.8
+  28  Stand-Up Comedy                  52      114      +62        10.2%        2.9%     -7.3
+  29  LGBTQ Movies                      3       47      +44         0.6%        1.2%     +0.6
+  30  TV Mysteries                      6       44      +38         1.2%        1.1%     -0.0
+  31  Cult Movies                       1       35      +34         0.2%        0.9%     +0.7
+  32  Teen TV Shows                     3       37      +34         0.6%        1.0%     +0.4
+  33  TV Sci-Fi & Fantasy               5       38      +33         1.0%        1.0%     -0.0
+  34  TV Horror                         7       40      +33         1.4%        1.0%     -0.3
+  35  Faith & Spirituality              1       30      +29         0.2%        0.8%     +0.6
+  36  Anime Features                    4       28      +24         0.8%        0.7%     -0.1
+  37  Science & Nature TV              13       35      +22         2.5%        0.9%     -1.7
+  38  TV Thrillers                      6       26      +20         1.2%        0.7%     -0.5
+  39  Stand-Up Comedy & Talk Shows        1       17      +16         0.2%        0.4%     +0.2
+  40  Classic & Cult TV                 2        7       +5         0.4%        0.2%     -0.2
+  41  TV Shows                          2        5       +3         0.4%        0.1%     -0.3
+  42  Movies                           13       12       -1         2.5%        0.3%     -2.2
+
+# Maiores ganhos e perdas de participação (cresceram mais / menos que o catálogo):
+  Dramas                     +13.1 p.p.
+  International Movies       +12.4 p.p.
+  Comedies                    +9.7 p.p.
+  Romantic Movies             +6.7 p.p.
+  Action & Adventure          +5.6 p.p.
+  Thrillers                   +3.7 p.p.
+  ...
+  Movies                      -2.2 p.p.
+  TV Comedies                 -3.2 p.p.
+  Romantic TV Shows           -4.2 p.p.
+  Kids' TV                    -4.7 p.p.
+  Stand-Up Comedy             -7.3 p.p.
+  Documentaries               -8.0 p.p.

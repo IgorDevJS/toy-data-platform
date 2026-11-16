@@ -1,0 +1,79 @@
+# Fase 2 · O número do Cube (catalog_overview) bate com SQL à mão no Trino
+
+# Total: catálogo 8802, com nota 1813, nota 6.625, 322914 votos (os mesmos do fct_titles/titles_overview).
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT MEASURE(count_catalog_titles) AS catalogo, MEASURE(count_titles) AS com_nota, round(MEASURE(avg_rating)::numeric, 3) AS nota, MEASURE(total_votes) AS votos FROM catalog_overview"  (2026-11-16 18:38:46)
+ catalogo | com_nota | nota  | votos  
+----------+----------+-------+--------
+     8802 |     1813 | 6.625 | 322914
+(1 linha)
+
+
+$ trino --execute "select count(distinct c.title_key) catalogo, count(distinct t.title_key) com_nota, round(avg(t.rating), 3) nota, sum(t.votes) votos from refined.ml.fct_catalog c left join refined.ml.fct_titles t on t.title_key = c.title_key"  (2026-11-16 18:38:51)
+ catalogo | com_nota | nota  | votos  
+----------+----------+-------+--------
+     8802 |     1813 | 6.625 | 322914 
+(1 row)
+
+# Por ano de entrada (a mesma tabela de 1-07, agora saindo da camada semântica).
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT year_added, MEASURE(count_catalog_titles) AS catalogo, MEASURE(count_titles) AS com_nota, round(MEASURE(avg_rating)::numeric, 3) AS nota FROM catalog_overview GROUP BY 1 ORDER BY 1"  (2026-11-16 18:38:56)
+ year_added | catalogo | com_nota | nota  
+------------+----------+----------+-------
+       2008 |        2 |        0 |      
+       2009 |        2 |        1 |   6.8
+       2010 |        1 |        0 |      
+       2011 |       13 |        0 |      
+       2012 |        3 |        2 |   6.3
+       2013 |       11 |        1 |   7.7
+       2014 |       24 |        4 |   6.9
+       2015 |       82 |        9 | 6.463
+       2016 |      428 |       68 | 6.404
+       2017 |     1188 |      192 | 6.598
+       2018 |     1646 |      258 | 6.673
+       2019 |     2015 |      456 | 6.646
+       2020 |     1879 |      444 | 6.523
+       2021 |     1498 |      378 | 6.729
+            |       10 |        0 |      
+(15 linhas)
+
+
+$ trino --execute "select c.added_year, count(distinct c.title_key) catalogo, count(distinct t.title_key) com_nota, round(avg(t.rating), 3) nota from refined.ml.fct_catalog c left join refined.ml.fct_titles t on t.title_key = c.title_key group by 1 order by 1"  (2026-11-16 18:39:00)
+ added_year | catalogo | com_nota | nota  
+------------+----------+----------+-------
+       2008 |        2 |        0 |  NULL 
+       2009 |        2 |        1 |   6.8 
+       2010 |        1 |        0 |  NULL 
+       2011 |       13 |        0 |  NULL 
+       2012 |        3 |        2 |   6.3 
+       2013 |       11 |        1 |   7.7 
+       2014 |       24 |        4 |   6.9 
+       2015 |       82 |        9 | 6.463 
+       2016 |      428 |       68 | 6.404 
+       2017 |     1188 |      192 | 6.598 
+       2018 |     1646 |      258 | 6.673 
+       2019 |     2015 |      456 | 6.646 
+       2020 |     1879 |      444 | 6.523 
+       2021 |     1498 |      378 | 6.729 
+       NULL |       10 |        0 |  NULL 
+(15 rows)
+
+# Ano de entrada × gênero, de 2015 em diante: as duas saídas em CSV, comparadas linha a linha.
+$ psql ... -At -F, -c "SELECT year_added, genre, MEASURE(count_catalog_titles), MEASURE(count_titles), round(MEASURE(avg_rating)::numeric, 3) FROM catalog_overview WHERE year_added >= 2015 GROUP BY 1, 2 ORDER BY 1, 2" > cube.csv
+$ trino --output-format CSV_UNQUOTED --execute "select c.added_year, g.genre_key, count(distinct c.title_key), count(distinct t.title_key), round(avg(t.rating), 3) from refined.ml.fct_catalog c join refined.ml.bridge_title_genre g on g.title_key = c.title_key left join refined.ml.fct_titles t on t.title_key = c.title_key where c.added_year >= 2015 group by 1, 2 order by 1, 2" > trino.csv
+$ python3 cmp.py cube.csv trino.csv   # compara como número (7 = 7.0)
+cube=283 linhas, trino=283 linhas, diferenças numéricas=1
+(2019.0, 'Cult Movies', 22.0, 17.0, 7.588) (2019.0, 'Cult Movies', 22.0, 17.0, 7.587)
+# A única diferença é de arredondamento: o valor sem arredondar é o mesmo.
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT MEASURE(avg_rating) AS nota FROM catalog_overview WHERE year_added = 2019 AND genre = 'Cult Movies'"  (2026-11-16 18:39:05)
+  nota  
+--------
+ 7.5875
+(1 linha)
+
+
+$ trino --execute "select avg(t.rating) nota from refined.ml.fct_catalog c join refined.ml.bridge_title_genre g on g.title_key = c.title_key join refined.ml.fct_titles t on t.title_key = c.title_key where c.added_year = 2019 and g.genre_key = 'Cult Movies'"  (2026-11-16 18:39:08)
+        nota        
+--------------------
+ 7.5874999999999995 
+(1 row)
+
+# Trino guarda 7.58749999... (double) e arredonda para 7.587; o Cube devolve 7.5875 e o numeric do Postgres arredonda para 7.588.

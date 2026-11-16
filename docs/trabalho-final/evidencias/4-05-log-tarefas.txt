@@ -1,0 +1,214 @@
+# Fase 4 · Logs das tarefas da 2ª execução (manual__2026-11-16T22:41:29), lidos de
+# /opt/airflow/logs/dag_id=movies_daily/run_id=.../task_id=<tarefa>/attempt=1.log (JSON por linha;
+# aqui só hora, nível e mensagem, sem os códigos de cor).
+
+===== task_id=dbt-source-freshness/attempt=1.log
+22:41:54 info DAG bundles loaded: dags-folder
+22:41:54 info Filling up the DagBag from /opt/airflow/dags/movies_daily.py
+22:41:55 info Starting docker container from image movies_transform:latest
+22:41:59 info 22:41:59  Running with dbt=1.12.6
+22:41:59 info INFO:trino.auth:keyring module not found. OAuth2 token will not be stored in keyring.
+22:41:59 info INFO:trino.auth:keyring module not found. OAuth2 token will not be stored in keyring.
+22:42:00 info 22:42:00  Registered adapter: trino=1.10.6
+22:42:00 info 22:42:00  Unable to do partial parsing because saved manifest not found. Starting full parse.
+22:42:05 info 22:42:05  Found 12 models, 48 data tests, 1 seed, 1 snapshot, 2 sources, 500 macros
+22:42:05 info 22:42:05
+22:42:05 info 22:42:05  Concurrency: 1 threads (target='prod')
+22:42:05 info 22:42:05
+22:42:05 info 22:42:05  [WARNING]: SSL certificate validation is disabled by default. It is legacy behavior which will be changed in future releases. It is strongly advise
+22:42:05 info You may opt into the new behavior sooner by setting `flags.require_certificate_validation` to `True` in `dbt_project.yml`.
+22:42:05 info Visit https://docs.getdbt.com/reference/global-configs/behavior-changes for more information.
+22:42:06 info 22:42:06  1 of 2 START freshness of raw.meta_critic ...................................... [RUN]
+22:42:06 info 22:42:06  1 of 2 PASS freshness of raw.meta_critic ....................................... [PASS in 0.18s]
+22:42:06 info 22:42:06  2 of 2 START freshness of raw.netflix_titles ................................... [RUN]
+22:42:06 info 22:42:06  2 of 2 PASS freshness of raw.netflix_titles .................................... [PASS in 0.12s]
+22:42:06 info 22:42:06
+22:42:06 info 22:42:06  Finished running 2 sources in 0 hours 0 minutes and 1.48 seconds (1.48s).
+22:42:06 info 22:42:06  Done.
+22:42:08 info Pushing xcom
+===== task_id=dbt-build/attempt=1.log
+22:42:09 info DAG bundles loaded: dags-folder
+22:42:09 info Filling up the DagBag from /opt/airflow/dags/movies_daily.py
+22:42:09 info Starting docker container from image movies_transform:latest
+22:42:13 info 22:42:13  Running with dbt=1.12.6
+22:42:13 info INFO:trino.auth:keyring module not found. OAuth2 token will not be stored in keyring.
+22:42:13 info INFO:trino.auth:keyring module not found. OAuth2 token will not be stored in keyring.
+22:42:14 info 22:42:14  Registered adapter: trino=1.10.6
+22:42:14 info 22:42:14  Unable to do partial parsing because saved manifest not found. Starting full parse.
+22:42:19 info 22:42:19  Found 12 models, 48 data tests, 1 seed, 1 snapshot, 2 sources, 500 macros
+22:42:19 info 22:42:19
+22:42:19 info 22:42:19  Concurrency: 1 threads (target='prod')
+22:42:19 info 22:42:19
+22:42:19 info 22:42:19  [WARNING]: SSL certificate validation is disabled by default. It is legacy behavior which will be changed in future releases. It is strongly advise
+22:42:19 info You may opt into the new behavior sooner by setting `flags.require_certificate_validation` to `True` in `dbt_project.yml`.
+22:42:19 info Visit https://docs.getdbt.com/reference/global-configs/behavior-changes for more information.
+22:42:20 info 22:42:20  1 of 61 START sql table model movies.meta_critic ............................... [RUN]
+22:42:22 info 22:42:22  1 of 61 OK created sql table model movies.meta_critic .......................... [CREATE TABLE (15_167 rows) in 1.34s]
+22:42:22 info 22:42:22  2 of 61 START sql table model movies.netflix_titles ............................ [RUN]
+22:42:22 info 22:42:22  2 of 61 OK created sql table model movies.netflix_titles ....................... [CREATE TABLE (8_807 rows) in 0.53s]
+22:42:22 info 22:42:22  3 of 61 START seed file raw.seed_data.orders_seed .............................. [RUN]
+22:42:23 info 22:42:23  3 of 61 OK loaded seed file seed_data.orders_seed .............................. [INSERT 2 in 0.70s]
+22:42:23 info 22:42:23  4 of 61 START test not_null_netflix_titles_date_added .......................... [RUN]
+22:42:23 info 22:42:23  4 of 61 PASS not_null_netflix_titles_date_added ................................ [PASS in 0.31s]
+22:42:23 info 22:42:23  5 of 61 START test not_null_netflix_titles_show_id ............................. [RUN]
+22:42:24 info 22:42:24  5 of 61 PASS not_null_netflix_titles_show_id ................................... [PASS in 0.60s]
+22:42:24 info 22:42:24  6 of 61 START test unique_netflix_titles_show_id ............................... [RUN]
+22:42:24 info 22:42:24  6 of 61 PASS unique_netflix_titles_show_id ..................................... [PASS in 0.57s]
+22:42:24 info 22:42:24  7 of 61 START sql incremental model delivery.orders ............................ [RUN]
+22:42:26 info 22:42:26  7 of 61 OK created sql incremental model delivery.orders ....................... [MERGE (0 rows) in 1.41s]
+22:42:26 info 22:42:26  8 of 61 START sql table model refined.ml.dim_type .............................. [RUN]
+22:42:26 info 22:42:26  8 of 61 OK created sql table model refined.ml.dim_type ......................... [CREATE TABLE (2 rows) in 0.58s]
+22:42:26 info 22:42:26  9 of 61 START sql table model refined.ml.dim_year .............................. [RUN]
+22:42:27 info 22:42:27  9 of 61 OK created sql table model refined.ml.dim_year ......................... [CREATE TABLE (74 rows) in 0.47s]
+22:42:27 info 22:42:27  10 of 61 START test not_null_orders_order_id ................................... [RUN]
+22:42:27 info 22:42:27  10 of 61 PASS not_null_orders_order_id ......................................... [PASS in 0.12s]
+22:42:27 info 22:42:27  11 of 61 START test unique_orders_order_id ..................................... [RUN]
+22:42:27 info 22:42:27  11 of 61 PASS unique_orders_order_id ........................................... [PASS in 0.20s]
+22:42:27 info 22:42:27  12 of 61 START test not_null_dim_type_type_key ................................. [RUN]
+22:42:27 info 22:42:27  12 of 61 PASS not_null_dim_type_type_key ....................................... [PASS in 0.13s]
+22:42:27 info 22:42:27  13 of 61 START test unique_dim_type_type_key ................................... [RUN]
+22:42:27 info 22:42:27  13 of 61 PASS unique_dim_type_type_key ......................................... [PASS in 0.16s]
+22:42:27 info 22:42:27  14 of 61 START test not_null_dim_year_year_key ................................. [RUN]
+22:42:28 info 22:42:28  14 of 61 PASS not_null_dim_year_year_key ....................................... [PASS in 0.15s]
+22:42:28 info 22:42:28  15 of 61 START test unique_dim_year_year_key ................................... [RUN]
+22:42:28 info 22:42:28  15 of 61 PASS unique_dim_year_year_key ......................................... [PASS in 0.16s]
+22:42:28 info 22:42:28  16 of 61 START sql table model refined.ml.fct_titles ........................... [RUN]
+22:42:29 info 22:42:29  16 of 61 OK created sql table model refined.ml.fct_titles ...................... [CREATE TABLE (1_813 rows) in 1.40s]
+22:42:29 info 22:42:29  17 of 61 START test assert_fct_titles_grain .................................... [RUN]
+22:42:30 info 22:42:30  17 of 61 PASS assert_fct_titles_grain .......................................... [PASS in 0.34s]
+22:42:30 info 22:42:30  18 of 61 START test not_null_fct_titles_title .................................. [RUN]
+22:42:30 info 22:42:30  18 of 61 PASS not_null_fct_titles_title ........................................ [PASS in 0.15s]
+22:42:30 info 22:42:30  19 of 61 START test not_null_fct_titles_title_key .............................. [RUN]
+22:42:30 info 22:42:30  19 of 61 PASS not_null_fct_titles_title_key .................................... [PASS in 0.17s]
+22:42:30 info 22:42:30  20 of 61 START test not_null_fct_titles_type_key ............................... [RUN]
+22:42:30 info 22:42:30  20 of 61 PASS not_null_fct_titles_type_key ..................................... [PASS in 0.16s]
+22:42:30 info 22:42:30  21 of 61 START test not_null_fct_titles_year_key ............................... [RUN]
+22:42:30 info 22:42:30  21 of 61 PASS not_null_fct_titles_year_key ..................................... [PASS in 0.16s]
+22:42:30 info 22:42:30  22 of 61 START test relationships_fct_titles_added_year__year_key__ref_dim_year_  [RUN]
+22:42:30 info 22:42:30  22 of 61 PASS relationships_fct_titles_added_year__year_key__ref_dim_year_ ..... [PASS in 0.20s]
+22:42:30 info 22:42:30  23 of 61 START test relationships_fct_titles_type_key__type_key__ref_dim_type_ . [RUN]
+22:42:31 info 22:42:31  23 of 61 PASS relationships_fct_titles_type_key__type_key__ref_dim_type_ ....... [PASS in 0.19s]
+22:42:31 info 22:42:31  24 of 61 START test relationships_fct_titles_year_key__year_key__ref_dim_year_ . [RUN]
+22:42:31 info 22:42:31  24 of 61 PASS relationships_fct_titles_year_key__year_key__ref_dim_year_ ....... [PASS in 0.18s]
+22:42:31 info 22:42:31  25 of 61 START test unique_fct_titles_title_key ................................ [RUN]
+22:42:31 info 22:42:31  25 of 61 PASS unique_fct_titles_title_key ...................................... [PASS in 0.12s]
+22:42:31 info 22:42:31  26 of 61 START sql table model refined.ml.fct_catalog .......................... [RUN]
+22:42:32 info 22:42:32  26 of 61 OK created sql table model refined.ml.fct_catalog ..................... [INSERT (8_802 rows) in 0.88s]
+22:42:32 info 22:42:32  27 of 61 START snapshot refined.snapshots.titles_snapshot ...................... [RUN]
+22:42:34 info 22:42:34  27 of 61 OK snapshotted refined.snapshots.titles_snapshot ...................... [MERGE (0 rows) in 2.03s]
+22:42:34 info 22:42:34  28 of 61 START test assert_fct_catalog_grain ................................... [RUN]
+22:42:34 info 22:42:34  28 of 61 PASS assert_fct_catalog_grain ......................................... [PASS in 0.64s]
+22:42:34 info 22:42:34  29 of 61 START test not_null_fct_catalog_added_year ............................ [RUN]
+22:42:35 info 22:42:35  29 of 61 PASS not_null_fct_catalog_added_year .................................. [PASS in 0.10s]
+22:42:35 info 22:42:35  30 of 61 START test not_null_fct_catalog_has_critic_rating ..................... [RUN]
+22:42:35 info 22:42:35  30 of 61 PASS not_null_fct_catalog_has_critic_rating ........................... [PASS in 0.09s]
+22:42:35 info 22:42:35  31 of 61 START test not_null_fct_catalog_title ................................. [RUN]
+22:42:35 info 22:42:35  31 of 61 PASS not_null_fct_catalog_title ....................................... [PASS in 0.10s]
+22:42:35 info 22:42:35  32 of 61 START test not_null_fct_catalog_title_key ............................. [RUN]
+22:42:35 info 22:42:35  32 of 61 PASS not_null_fct_catalog_title_key ................................... [PASS in 0.15s]
+22:42:35 info 22:42:35  33 of 61 START test not_null_fct_catalog_type_key .............................. [RUN]
+22:42:35 info 22:42:35  33 of 61 PASS not_null_fct_catalog_type_key .................................... [PASS in 0.14s]
+22:42:35 info 22:42:35  34 of 61 START test not_null_fct_catalog_year_key .............................. [RUN]
+22:42:35 info 22:42:35  34 of 61 PASS not_null_fct_catalog_year_key .................................... [PASS in 0.11s]
+22:42:35 info 22:42:35  35 of 61 START test relationships_fct_catalog_added_year__year_key__ref_dim_year_  [RUN]
+22:42:35 info 22:42:35  35 of 61 PASS relationships_fct_catalog_added_year__year_key__ref_dim_year_ .... [PASS in 0.21s]
+22:42:35 info 22:42:35  36 of 61 START test relationships_fct_catalog_type_key__type_key__ref_dim_type_  [RUN]
+22:42:36 info 22:42:36  36 of 61 PASS relationships_fct_catalog_type_key__type_key__ref_dim_type_ ...... [PASS in 0.17s]
+22:42:36 info 22:42:36  37 of 61 START test relationships_fct_catalog_year_key__year_key__ref_dim_year_  [RUN]
+22:42:36 info 22:42:36  37 of 61 PASS relationships_fct_catalog_year_key__year_key__ref_dim_year_ ...... [PASS in 0.15s]
+22:42:36 info 22:42:36  38 of 61 START test relationships_fct_titles_title_key__title_key__ref_fct_catalog_  [RUN]
+22:42:36 info 22:42:36  38 of 61 PASS relationships_fct_titles_title_key__title_key__ref_fct_catalog_ .. [PASS in 0.21s]
+22:42:36 info 22:42:36  39 of 61 START test unique_fct_catalog_title_key ............................... [RUN]
+22:42:36 info 22:42:36  39 of 61 PASS unique_fct_catalog_title_key ..................................... [PASS in 0.14s]
+22:42:36 info 22:42:36  40 of 61 START test not_null_titles_snapshot_title_key ......................... [RUN]
+22:42:36 info 22:42:36  40 of 61 PASS not_null_titles_snapshot_title_key ............................... [PASS in 0.14s]
+22:42:36 info 22:42:36  41 of 61 START sql table model refined.ml.bridge_title_country ................. [RUN]
+22:42:37 info 22:42:37  41 of 61 OK created sql table model refined.ml.bridge_title_country ............ [CREATE TABLE (10_006 rows) in 0.69s]
+22:42:37 info 22:42:37  42 of 61 START sql table model refined.ml.bridge_title_genre ................... [RUN]
+22:42:38 info 22:42:38  42 of 61 OK created sql table model refined.ml.bridge_title_genre .............. [CREATE TABLE (19_309 rows) in 1.06s]
+22:42:38 info 22:42:38  43 of 61 START test not_null_bridge_title_country_country_key .................. [RUN]
+22:42:38 info 22:42:38  43 of 61 PASS not_null_bridge_title_country_country_key ........................ [PASS in 0.13s]
+22:42:38 info 22:42:38  44 of 61 START test not_null_bridge_title_country_title_country_key ............ [RUN]
+22:42:38 info 22:42:38  44 of 61 PASS not_null_bridge_title_country_title_country_key .................. [PASS in 0.14s]
+22:42:38 info 22:42:38  45 of 61 START test not_null_bridge_title_country_title_key .................... [RUN]
+22:42:38 info 22:42:38  45 of 61 PASS not_null_bridge_title_country_title_key .......................... [PASS in 0.12s]
+22:42:38 info 22:42:38  46 of 61 START test relationships_bridge_title_country_title_key__title_key__ref_fct_catalog_  [RUN]
+22:42:39 info 22:42:39  46 of 61 PASS relationships_bridge_title_country_title_key__title_key__ref_fct_catalog_  [PASS in 0.17s]
+22:42:39 info 22:42:39  47 of 61 START test unique_bridge_title_country_title_country_key .............. [RUN]
+22:42:39 info 22:42:39  47 of 61 PASS unique_bridge_title_country_title_country_key .................... [PASS in 0.12s]
+22:42:39 info 22:42:39  48 of 61 START test assert_bridge_genre_covers_catalog ......................... [RUN]
+22:42:39 info 22:42:39  48 of 61 PASS assert_bridge_genre_covers_catalog ............................... [PASS in 0.24s]
+22:42:39 info 22:42:39  49 of 61 START test not_null_bridge_title_genre_genre_key ...................... [RUN]
+22:42:39 info 22:42:39  49 of 61 PASS not_null_bridge_title_genre_genre_key ............................ [PASS in 0.09s]
+22:42:39 info 22:42:39  50 of 61 START test not_null_bridge_title_genre_title_genre_key ................ [RUN]
+22:42:39 info 22:42:39  50 of 61 PASS not_null_bridge_title_genre_title_genre_key ...................... [PASS in 0.08s]
+22:42:39 info 22:42:39  51 of 61 START test not_null_bridge_title_genre_title_key ...................... [RUN]
+22:42:39 info 22:42:39  51 of 61 PASS not_null_bridge_title_genre_title_key ............................ [PASS in 0.12s]
+22:42:39 info 22:42:39  52 of 61 START test relationships_bridge_title_genre_title_key__title_key__ref_fct_catalog_  [RUN]
+22:42:40 info 22:42:40  52 of 61 PASS relationships_bridge_title_genre_title_key__title_key__ref_fct_catalog_  [PASS in 0.29s]
+22:42:40 info 22:42:40  53 of 61 START test unique_bridge_title_genre_title_genre_key .................. [RUN]
+22:42:40 info 22:42:40  53 of 61 PASS unique_bridge_title_genre_title_genre_key ........................ [PASS in 0.22s]
+22:42:40 info 22:42:40  54 of 61 START sql table model refined.ml.dim_country .......................... [RUN]
+22:42:40 info 22:42:40  54 of 61 OK created sql table model refined.ml.dim_country ..................... [CREATE TABLE (122 rows) in 0.27s]
+22:42:40 info 22:42:40  55 of 61 START sql table model refined.ml.dim_genre ............................ [RUN]
+22:42:40 info 22:42:40  55 of 61 OK created sql table model refined.ml.dim_genre ....................... [CREATE TABLE (42 rows) in 0.27s]
+22:42:40 info 22:42:40  56 of 61 START test not_null_dim_country_country_key ........................... [RUN]
+22:42:40 info 22:42:40  56 of 61 PASS not_null_dim_country_country_key ................................. [PASS in 0.13s]
+22:42:40 info 22:42:40  57 of 61 START test relationships_bridge_title_country_country_key__country_key__ref_dim_country_  [RUN]
+22:42:41 info 22:42:41  57 of 61 PASS relationships_bridge_title_country_country_key__country_key__ref_dim_country_  [PASS in 0.33s]
+22:42:41 info 22:42:41  58 of 61 START test unique_dim_country_country_key ............................. [RUN]
+22:42:41 info 22:42:41  58 of 61 PASS unique_dim_country_country_key ................................... [PASS in 0.23s]
+22:42:41 info 22:42:41  59 of 61 START test not_null_dim_genre_genre_key ............................... [RUN]
+22:42:41 info 22:42:41  59 of 61 PASS not_null_dim_genre_genre_key ..................................... [PASS in 0.18s]
+22:42:41 info 22:42:41  60 of 61 START test relationships_bridge_title_genre_genre_key__genre_key__ref_dim_genre_  [RUN]
+22:42:42 info 22:42:42  60 of 61 PASS relationships_bridge_title_genre_genre_key__genre_key__ref_dim_genre_  [PASS in 0.43s]
+22:42:42 info 22:42:42  61 of 61 START test unique_dim_genre_genre_key ................................. [RUN]
+22:42:42 info 22:42:42  61 of 61 PASS unique_dim_genre_genre_key ....................................... [PASS in 0.19s]
+22:42:42 info 22:42:42
+22:42:42 info 22:42:42  Finished running 1 incremental model, 1 seed, 1 snapshot, 10 table models, 48 data tests in 0 hours 0 minutes and 22.64 seconds (22.64s).
+22:42:42 info 22:42:42
+22:42:42 info 22:42:42  Completed successfully
+22:42:42 info 22:42:42
+22:42:42 info 22:42:42  Done. PASS=61 WARN=0 ERROR=0 SKIP=0 NO-OP=0 REUSED=0 TOTAL=61
+22:42:44 info Pushing xcom
+===== task_id=ingest-netflix_titles/attempt=1.log
+22:41:30 info DAG bundles loaded: dags-folder
+22:41:30 info Filling up the DagBag from /opt/airflow/dags/movies_daily.py
+22:41:30 info Starting docker container from image my-dlt-pipeline:latest
+22:41:44 info /usr/local/lib/python3.11/site-packages/dlt/pipeline/progress.py:27: UserWarning: psutil dependency is not installed and memory stats will not be available. Add psutil to
+22:41:44 info   return log()
+22:41:51 info ------------------------ Extract iceberg_filesystem_csv ------------------------
+22:41:51 info Resources: 0/1 (0.0%) | Time: 0.00s | Rate: 0.00/s
+22:41:51 info 
+22:41:51 info ------------------------ Extract iceberg_filesystem_csv ------------------------
+22:41:51 info Resources: 1/1 (100.0%) | Time: 0.65s | Rate: 1.53/s
+22:41:51 info netflix_titles: 8807  | Time: 0.01s | Rate: 752050.88/s
+22:41:51 info 
+22:41:51 info ------------ Normalize iceberg_filesystem_csv in 1794868906.7424798 ------------
+22:41:51 info Files: 0/1 (0.0%) | Time: 0.00s | Rate: 0.00/s
+22:41:51 info 
+22:41:51 info ------------ Normalize iceberg_filesystem_csv in 1794868906.7424798 ------------
+22:41:51 info Files: 1/1 (100.0%) | Time: 0.06s | Rate: 16.52/s
+22:41:51 info netflix_titles: 8807  | Time: 0.01s | Rate: 1321004.02/s
+22:41:51 info 
+22:41:51 info -------------- Load iceberg_filesystem_csv in 1794868906.7424798 ---------------
+22:41:51 info Jobs: 0/1 (0.0%) | Time: 0.00s | Rate: 0.00/s
+22:41:51 info 
+22:41:51 info -------------- Load iceberg_filesystem_csv in 1794868906.7424798 ---------------
+22:41:51 info Jobs: 0/2 (0.0%) | Time: 2.83s | Rate: 0.00/s
+22:41:51 info 
+22:41:51 info -------------- Load iceberg_filesystem_csv in 1794868906.7424798 ---------------
+22:41:51 info Jobs: 1/2 (50.0%) | Time: 4.11s | Rate: 0.24/s
+22:41:51 info 
+22:41:51 info -------------- Load iceberg_filesystem_csv in 1794868906.7424798 ---------------
+22:41:51 info Jobs: 2/2 (100.0%) | Time: 4.13s | Rate: 0.48/s
+22:41:51 info 
+22:41:51 info Pipeline iceberg_filesystem_csv load step finished in 4.13 seconds
+22:41:51 info 1 load package(s) were loaded to destination filesystem and into dataset raw_movies
+22:41:51 info The filesystem destination used s3://raw location to store data
+22:41:51 info Load package 1794868906.7424798 is LOADED and contains no failed jobs
+22:41:51 info Normalized data for the following tables:
+22:41:51 info - netflix_titles: 8807 row(s)
+22:41:51 info 
+22:41:51 info Load package 1794868906.7424798 is NORMALIZED and NOT YET LOADED to the destination and contains no failed jobs
+22:41:53 info Pushing xcom

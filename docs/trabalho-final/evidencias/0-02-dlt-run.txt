@@ -1,0 +1,119 @@
+===== $ make dlt-run DLT_TABLE=netflix_titles  (2026-11-13 17:17:12)
+docker build -t my-dlt-pipeline dlt/
+docker run --rm \
+    --env-file /home/igor/Documentos/facul-pos/data-engineering/toy-data-platform/dlt/.env.docker \
+    --network platform-net \
+    my-dlt-pipeline \
+    python filesystem_pipeline.py -t netflix_titles
+/usr/local/lib/python3.11/site-packages/dlt/pipeline/progress.py:27: UserWarning: psutil dependency is not installed and memory stats will not be available. Add psutil to your environment or pass dump_system_stats=False to disable this warning.
+  return log()
+/usr/local/lib/python3.11/site-packages/pyiceberg/table/__init__.py:721: UserWarning: Delete operation did not match any records
+  self.delete(
+------------------------ Extract iceberg_filesystem_csv ------------------------
+Resources: 0/1 (0.0%) | Time: 0.00s | Rate: 0.00/s
+------------------------ Extract iceberg_filesystem_csv ------------------------
+Resources: 1/1 (100.0%) | Time: 0.27s | Rate: 3.71/s
+netflix_titles: 8807  | Time: 0.01s | Rate: 817963.58/s
+------------------------ Extract iceberg_filesystem_csv ------------------------
+Resources: 0/1 (0.0%) | Time: 0.00s | Rate: 0.00/s
+------------------------ Extract iceberg_filesystem_csv ------------------------
+Resources: 1/1 (100.0%) | Time: 0.02s | Rate: 59.00/s
+_dlt_pipeline_state: 1  | Time: 0.01s | Rate: 79.85/s
+------------ Normalize iceberg_filesystem_csv in 1794601041.9748497 ------------
+Files: 0/2 (0.0%) | Time: 0.00s | Rate: 0.00/s
+------------ Normalize iceberg_filesystem_csv in 1794601041.9748497 ------------
+Files: 2/2 (100.0%) | Time: 0.02s | Rate: 102.34/s
+_dlt_pipeline_state: 1  | Time: 0.01s | Rate: 102.38/s
+netflix_titles: 8807  | Time: 0.01s | Rate: 1157062.97/s
+-------------- Load iceberg_filesystem_csv in 1794601041.9748497 ---------------
+Jobs: 0/2 (0.0%) | Time: 0.00s | Rate: 0.00/s
+-------------- Load iceberg_filesystem_csv in 1794601041.9748497 ---------------
+Jobs: 0/3 (0.0%) | Time: 2.26s | Rate: 0.00/s
+-------------- Load iceberg_filesystem_csv in 1794601041.9748497 ---------------
+Jobs: 3/3 (100.0%) | Time: 3.24s | Rate: 0.93/s
+Pipeline iceberg_filesystem_csv load step finished in 3.24 seconds
+1 load package(s) were loaded to destination filesystem and into dataset raw_movies
+The filesystem destination used s3://raw location to store data
+Load package 1794601041.9748497 is LOADED and contains no failed jobs
+Normalized data for the following tables:
+- _dlt_pipeline_state: 1 row(s)
+- netflix_titles: 8807 row(s)
+Load package 1794601041.9748497 is NORMALIZED and NOT YET LOADED to the destination and contains no failed jobs
+exit=0
+===== $ make dlt-run DLT_TABLE=meta_critic  (2026-11-13 17:17:28)
+docker build -t my-dlt-pipeline dlt/
+docker run --rm \
+    --env-file /home/igor/Documentos/facul-pos/data-engineering/toy-data-platform/dlt/.env.docker \
+    --network platform-net \
+    my-dlt-pipeline \
+    python filesystem_pipeline.py -t meta_critic
+/usr/local/lib/python3.11/site-packages/dlt/pipeline/progress.py:27: UserWarning: psutil dependency is not installed and memory stats will not be available. Add psutil to your environment or pass dump_system_stats=False to disable this warning.
+  return log()
+/usr/local/lib/python3.11/site-packages/pyiceberg/table/__init__.py:721: UserWarning: Delete operation did not match any records
+  self.delete(
+------------------------ Extract iceberg_filesystem_csv ------------------------
+Resources: 0/1 (0.0%) | Time: 0.00s | Rate: 0.00/s
+------------------------ Extract iceberg_filesystem_csv ------------------------
+Resources: 1/1 (100.0%) | Time: 0.30s | Rate: 3.29/s
+meta_critic: 16290  | Time: 0.01s | Rate: 1433175.57/s
+------------ Normalize iceberg_filesystem_csv in 1794601055.5356505 ------------
+Files: 0/1 (0.0%) | Time: 0.00s | Rate: 0.00/s
+------------ Normalize iceberg_filesystem_csv in 1794601055.5356505 ------------
+Files: 1/1 (100.0%) | Time: 0.02s | Rate: 49.90/s
+meta_critic: 16290  | Time: 0.01s | Rate: 2270468.62/s
+-------------- Load iceberg_filesystem_csv in 1794601055.5356505 ---------------
+Jobs: 0/1 (0.0%) | Time: 0.00s | Rate: 0.00/s
+-------------- Load iceberg_filesystem_csv in 1794601055.5356505 ---------------
+Jobs: 0/2 (0.0%) | Time: 2.12s | Rate: 0.00/s
+-------------- Load iceberg_filesystem_csv in 1794601055.5356505 ---------------
+Jobs: 2/2 (100.0%) | Time: 3.07s | Rate: 0.65/s
+Pipeline iceberg_filesystem_csv load step finished in 3.07 seconds
+1 load package(s) were loaded to destination filesystem and into dataset raw_movies
+The filesystem destination used s3://raw location to store data
+Load package 1794601055.5356505 is LOADED and contains no failed jobs
+Normalized data for the following tables:
+- meta_critic: 16290 row(s)
+Load package 1794601055.5356505 is NORMALIZED and NOT YET LOADED to the destination and contains no failed jobs
+exit=0
+===== $ make dlt-run DLT_TABLE=imdb_top_1000  (2026-11-13 17:17:42)
+docker build -t my-dlt-pipeline dlt/
+docker run --rm \
+    --env-file /home/igor/Documentos/facul-pos/data-engineering/toy-data-platform/dlt/.env.docker \
+    --network platform-net \
+    my-dlt-pipeline \
+    python filesystem_pipeline.py -t imdb_top_1000
+/usr/local/lib/python3.11/site-packages/dlt/pipeline/progress.py:27: UserWarning: psutil dependency is not installed and memory stats will not be available. Add psutil to your environment or pass dump_system_stats=False to disable this warning.
+  return log()
+/usr/local/lib/python3.11/site-packages/pyiceberg/table/__init__.py:721: UserWarning: Delete operation did not match any records
+  self.delete(
+------------------------ Extract iceberg_filesystem_csv ------------------------
+Resources: 0/1 (0.0%) | Time: 0.00s | Rate: 0.00/s
+------------------------ Extract iceberg_filesystem_csv ------------------------
+Resources: 1/1 (100.0%) | Time: 0.10s | Rate: 10.50/s
+imdb_top_1000: 1000  | Time: 0.02s | Rate: 54415.65/s
+------------ Normalize iceberg_filesystem_csv in 1794601071.1543257 ------------
+Files: 0/1 (0.0%) | Time: 0.00s | Rate: 0.00/s
+------------ Normalize iceberg_filesystem_csv in 1794601071.1543257 ------------
+Files: 1/1 (100.0%) | Time: 0.02s | Rate: 59.83/s
+imdb_top_1000: 1000  | Time: 0.01s | Rate: 113231.04/s
+-------------- Load iceberg_filesystem_csv in 1794601071.1543257 ---------------
+Jobs: 0/1 (0.0%) | Time: 0.00s | Rate: 0.00/s
+-------------- Load iceberg_filesystem_csv in 1794601071.1543257 ---------------
+Jobs: 0/2 (0.0%) | Time: 2.05s | Rate: 0.00/s
+-------------- Load iceberg_filesystem_csv in 1794601071.1543257 ---------------
+Jobs: 2/2 (100.0%) | Time: 2.67s | Rate: 0.75/s
+Pipeline iceberg_filesystem_csv load step finished in 2.67 seconds
+1 load package(s) were loaded to destination filesystem and into dataset raw_movies
+The filesystem destination used s3://raw location to store data
+Load package 1794601071.1543257 is LOADED and contains no failed jobs
+Normalized data for the following tables:
+- imdb_top_1000: 1000 row(s)
+Load package 1794601071.1543257 is NORMALIZED and NOT YET LOADED to the destination and contains no failed jobs
+exit=0
+
+===== Conferência no Trino (2026-11-13 17:17:56)
+Nov 13, 2026 8:17:58 PM org.jline.utils.Log logr
+WARNING: Unable to create a system terminal, creating a dumb terminal (enable debug logging for more information)
+"netflix_titles","8807"
+"imdb_top_1000","1000"
+"meta_critic","16290"

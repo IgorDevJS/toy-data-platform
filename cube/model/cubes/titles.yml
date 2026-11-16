@@ -42,9 +42,16 @@ cubes:
         sql: type_key
         type: string
 
+      - name: year_added
+        description: Ano em que o título entrou no catálogo da Netflix.
+        sql: added_year
+        type: number
+
     measures:
       - name: count_titles
-        description: Quantidade de títulos distintos.
+        description: >
+          Quantidade de títulos distintos com nota da crítica (os 1813 que cruzam
+          com o Metacritic). Para o catálogo inteiro, ver `count_catalog_titles`.
         type: count_distinct
         sql: title_key
 
