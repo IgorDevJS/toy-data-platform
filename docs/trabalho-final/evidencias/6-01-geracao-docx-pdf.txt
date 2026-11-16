@@ -1,0 +1,55 @@
+# Fase 6 · Geração do relatório: RASCUNHO.md → DOCX (pandoc em container) → PDF (LibreOffice)
+# O gerador fica em relatorio/ferramentas/docx/ (gerar.py e a macro lo_pdf.py).
+
+$ python3 ferramentas/docx/gerar.py --pdf  (2026-11-16 20:44:44)
+ok: /home/igor/Documentos/facul-pos/data-engineering/relatorio/build/relatorio.docx
+sumarios atualizados: 1
+pdf ok
+ok: /home/igor/Documentos/facul-pos/data-engineering/relatorio/build/relatorio.pdf
+
+$ docker run --rm pandoc/core:3.6 --version | head -1
+pandoc 3.6.4
+
+$ pdfinfo build/relatorio.pdf | grep -E 'Pages|Page size'
+Pages:           28
+Page size:       595.304 x 841.89 pts (A4)
+
+# Sumário preenchido pela macro (o LibreOffice não atualiza o campo TOC sozinho ao converter):
+$ pdftotext -f 1 -l 1 -layout build/relatorio.pdf - | grep -E '^ *[0-9A].*\.{5,}.*[0-9]+$' | sed 's/\.\{5,\}/ … /'
+1. O que foi feito e por quê … 2
+2. Como foi feito …  3
+    2.1 Transformação e modelagem (dbt) … 3
+    2.2 Camada semântica (Cube) … 4
+    2.3 Consumo (Superset) …  6
+    2.4 Orquestração (Airflow) … 8
+    2.5 A resposta, pela camada semântica …  9
+3. Evidências … 12
+    3.0 Estado inicial (o “antes”) … 12
+    3.1 Transformação (dbt) … 14
+    3.2 Camada semântica (Cube) … 16
+    3.3 Consumo (Superset) …  17
+    3.4 Orquestração (Airflow) … 19
+    3.5 A resposta …  22
+4. Dificuldades … 24
+5. Uso de IA … 24
+6. Aprendizados …  26
+7. Conclusão … 26
+Apêndice A. Índice das evidências … 28
+
+# Figuras no DOCX (11 prints; o 3-05 ficou só na tabela, por ser idêntico ao 0-06):
+$ unzip -l build/relatorio.docx | grep -c 'word/media/'
+11
+
+# Uma linha do rascunho começava com '8807.', que o Markdown lê como item de lista numerada
+# vazio, e o pandoc apagava o texto. Depois de reescrever a quebra de linha:
+$ pdftotext build/relatorio.pdf - | grep -c 'de 8807\.'
+1
+
+# Conferência do 3-05 (dashboard original depois das mudanças), byte a byte igual ao 0-06:
+$ md5sum evidencias/0-06-superset-dashboard.png evidencias/3-05-superset-dashboard-original.png
+9c738267a60b3b0f6b9f40d509aee30e  evidencias/0-06-superset-dashboard.png
+9c738267a60b3b0f6b9f40d509aee30e  evidencias/3-05-superset-dashboard-original.png
+# Print novo do mesmo dashboard (SUPERSET_DASHBOARD=1 node prints.js <scratch> superset), 2026-11-16 ~20:30:
+# mesmo conteúdo (gráfico por país e tabela por tipo, 1.67k / 6.63 / 307k e 140 / 6.6 / 15.8k);
+# só muda o texto relativo do cabeçalho ('3 minutes ago' → 'an hour ago'). O 3-05 é legítimo:
+# o Chrome headless gera o mesmo PNG quando a tela é a mesma.

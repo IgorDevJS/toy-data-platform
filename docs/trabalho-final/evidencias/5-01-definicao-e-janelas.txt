@@ -1,0 +1,40 @@
+# Fase 5 · Definição de crescimento e as duas janelas (SQL API do Cube, view catalog_overview)
+
+# Crescimento de um gênero = títulos dele que ENTRARAM no catálogo (year_added) na janela final
+# 2019–2020 menos os que entraram na janela inicial 2015–2016.
+# Por que janelas de 2 anos: 2015 sozinho tem 82 títulos e só 9 com nota; 2021 vai até setembro
+# (ano parcial); 2019 e 2020 são os dois últimos anos completos.
+# Atenção: a base é uma foto do catálogo em set/2021. Título que entrou e saiu antes disso não
+# aparece, então os anos antigos estão sub-representados (viés de sobrevivência).
+
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT year_added, MEASURE(count_catalog_titles) AS catalogo, MEASURE(count_titles) AS com_nota, round(MEASURE(avg_rating)::numeric, 3) AS nota FROM catalog_overview WHERE year_added >= 2014 GROUP BY 1 ORDER BY 1"  (2026-11-16 20:24:35)
+ year_added | catalogo | com_nota | nota  
+------------+----------+----------+-------
+       2014 |       24 |        4 |   6.9
+       2015 |       82 |        9 | 6.463
+       2016 |      428 |       68 | 6.404
+       2017 |     1188 |      192 | 6.598
+       2018 |     1646 |      258 | 6.673
+       2019 |     2015 |      456 | 6.646
+       2020 |     1879 |      444 | 6.523
+       2021 |     1498 |      378 | 6.729
+(8 rows)
+
+
+
+# As duas janelas (o Cube conta cada título uma vez, sem agrupar por ano):
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT MEASURE(count_catalog_titles) AS catalogo, MEASURE(count_titles) AS com_nota, round(MEASURE(avg_rating)::numeric, 3) AS nota FROM catalog_overview WHERE year_added BETWEEN 2015 AND 2016"  (2026-11-16 20:24:39)
+ catalogo | com_nota | nota  
+----------+----------+-------
+      510 |       77 | 6.411
+(1 row)
+
+
+
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT MEASURE(count_catalog_titles) AS catalogo, MEASURE(count_titles) AS com_nota, round(MEASURE(avg_rating)::numeric, 3) AS nota FROM catalog_overview WHERE year_added BETWEEN 2019 AND 2020"  (2026-11-16 20:24:43)
+ catalogo | com_nota | nota  
+----------+----------+-------
+     3894 |      900 | 6.586
+(1 row)
+
+

@@ -1,0 +1,53 @@
+# Fase 4 · Idempotência: a DAG movies_daily rodou duas vezes, as contagens não mudam
+# Só muda o _dlt_load_id (a carga é nova), que é o que a source freshness mede.
+
+$ airflow dags list-runs movies_daily
+dag_id       | run_id                                   | state   | run_after                        | logical_date              | start_date                       | end_date                        
+=============+==========================================+=========+==================================+===========================+==================================+=================================
+movies_daily | manual__2026-11-16T22:41:29.904892+00:00 | success | 2026-11-16T22:41:29.904892+00:00 |                           | 2026-11-16T22:41:29.965610+00:00 | 2026-11-16T22:42:45.005712+00:00
+movies_daily | scheduled__2026-11-16T00:00:00+00:00     | success | 2026-11-16T00:00:00+00:00        | 2026-11-16T00:00:00+00:00 | 2026-11-16T22:39:03.232637+00:00 | 2026-11-16T22:40:47.036953+00:00
+                                                                                                                                                                                                      
+
+## Antes (última carga feita à mão, Fase 1)
+$ trino --execute "<contagens raw → refined>"  (2026-11-16 19:38:05)
+ raw_netflix | raw_meta_critic | raw_imdb | fct_catalog | fct_titles | ponte_genero | snapshot_linhas | snapshot_atuais | orders 
+-------------+-----------------+----------+-------------+------------+--------------+-----------------+-----------------+--------
+        8807 |           16290 |     1000 |        8802 |       1813 |        19309 |            1815 |            1813 |      2 
+(1 row)
+$ trino --execute "<última carga do dlt por tabela>"
+     tabela     |            carga            | cargas 
+----------------+-----------------------------+--------
+ netflix_titles | 2026-11-13 21:03:02.722 UTC |      1 
+ meta_critic    | 2026-11-13 21:07:16.338 UTC |      1 
+(2 rows)
+
+## Depois da 1ª execução (scheduled__2026-11-16, agendada)
+$ trino --execute "<contagens raw → refined>"  (2026-11-16 19:41:10)
+ raw_netflix | raw_meta_critic | raw_imdb | fct_catalog | fct_titles | ponte_genero | snapshot_linhas | snapshot_atuais | orders 
+-------------+-----------------+----------+-------------+------------+--------------+-----------------+-----------------+--------
+        8807 |           16290 |     1000 |        8802 |       1813 |        19309 |            1815 |            1813 |      2 
+(1 row)
+$ trino --execute "<última carga do dlt por tabela>"
+     tabela     |            carga            | cargas 
+----------------+-----------------------------+--------
+ netflix_titles | 2026-11-16 22:39:22.229 UTC |      1 
+ meta_critic    | 2026-11-16 22:39:22.380 UTC |      1 
+(2 rows)
+
+## Depois da 2ª execução (manual, make airflow-run)
+$ trino --execute "<contagens raw → refined>"  (2026-11-16 19:42:58)
+ raw_netflix | raw_meta_critic | raw_imdb | fct_catalog | fct_titles | ponte_genero | snapshot_linhas | snapshot_atuais | orders 
+-------------+-----------------+----------+-------------+------------+--------------+-----------------+-----------------+--------
+        8807 |           16290 |     1000 |        8802 |       1813 |        19309 |            1815 |            1813 |      2 
+(1 row)
+$ trino --execute "<última carga do dlt por tabela>"
+     tabela     |            carga            | cargas 
+----------------+-----------------------------+--------
+ netflix_titles | 2026-11-16 22:41:46.742 UTC |      1 
+ meta_critic    | 2026-11-16 22:41:46.694 UTC |      1 
+(2 rows)
+
+## Comparação das contagens (só a linha de números)
+antes          8807 |           16290 |     1000 |        8802 |       1813 |        19309 |            1815 |            1813 |      2 
+run1           8807 |           16290 |     1000 |        8802 |       1813 |        19309 |            1815 |            1813 |      2 
+run2           8807 |           16290 |     1000 |        8802 |       1813 |        19309 |            1815 |            1813 |      2 

@@ -1,0 +1,38 @@
+$ docker compose ps -a  (2026-11-13 17:19:15)
+SERVICE                 IMAGE                                                                                      STATE     STATUS
+airflow-dag-processor   toy-data-platform-airflow-dag-processor                                                    running   Up 3 minutes
+airflow-init            toy-data-platform-airflow-init                                                             exited    Exited (0) 3 minutes ago
+airflow-scheduler       toy-data-platform-airflow-scheduler                                                        running   Up 3 minutes
+airflow-webserver       toy-data-platform-airflow-webserver                                                        running   Up 3 minutes
+bootstrap-lakekeeper    curlimages/curl                                                                            exited    Exited (0) 3 minutes ago
+create-warehouse        curlimages/curl                                                                            exited    Exited (0) 3 minutes ago
+createbuckets           chainguard/minio@sha256:2136d593beacf4461187035eca949fe49abd589d5079735025c711ca58fee0c8   exited    Exited (0) 3 minutes ago
+cube                    cubejs/cube:v1.8.6                                                                         running   Up 4 minutes (healthy)
+lakekeeper              quay.io/lakekeeper/catalog:v0.12.4                                                         running   Up 3 minutes
+lakekeeper_db           postgres:16                                                                                running   Up 4 minutes (healthy)
+migrate                 quay.io/lakekeeper/catalog:v0.12.4                                                         exited    Exited (0) 3 minutes ago
+minio                   chainguard/minio@sha256:2136d593beacf4461187035eca949fe49abd589d5079735025c711ca58fee0c8   running   Up 4 minutes
+postgres                postgres:16                                                                                running   Up 4 minutes (healthy)
+superset                superset-semantico                                                                         running   Up 3 minutes (healthy)
+superset-bootstrap      superset-semantico                                                                         exited    Exited (0) 2 minutes ago
+superset-postgres       postgres:16                                                                                running   Up 4 minutes (healthy)
+trino                   trinodb/trino:471                                                                          running   Up 4 minutes (healthy)
+
+$ free -m
+               total       usada       livre    compart.  buff/cache  disponível
+Mem.:          19908       12201         338        1214        8932        7706
+Swap:           4095        1514        2581
+
+$ docker stats --no-stream
+NAME                                    MEM USAGE / LIMIT     CPU %
+toy-data-platform-superset-1            238MiB / 19.44GiB     0.02%
+airflow_dag_processor                   158.1MiB / 19.44GiB   0.63%
+airflow_webserver                       177.4MiB / 19.44GiB   0.08%
+toy-data-platform-lakekeeper-1          22.11MiB / 19.44GiB   0.03%
+airflow_scheduler                       377MiB / 19.44GiB     1.64%
+toy-data-platform-cube-1                239.2MiB / 19.44GiB   0.19%
+toy-data-platform-minio-1               116.6MiB / 19.44GiB   0.03%
+toy-data-platform-postgres-1            46.8MiB / 19.44GiB    0.79%
+toy-data-platform-superset-postgres-1   101.8MiB / 19.44GiB   0.00%
+toy-data-platform-trino-1               1.138GiB / 2GiB       1.73%
+toy-data-platform-lakekeeper_db-1       111.6MiB / 19.44GiB   0.01%

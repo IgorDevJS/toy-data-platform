@@ -1,0 +1,80 @@
+# Fase 3 · Bootstrap do Superset idempotente (2026-11-16)
+# Inventário pela REST API (dashboards, gráficos, datasets e métricas) antes e depois de
+# rodar o bootstrap duas vezes seguidas: docker compose run --rm --no-deps superset-bootstrap
+
+## inventário antes
+dashboards:
+  id=1 Camada semântica — títulos
+  id=2 Crescimento do catálogo por gênero
+charts:
+  id=1 Nota média por país [echarts_timeseries_bar] dataset=public.titles_overview
+  id=2 Medidas por tipo de título [table] dataset=public.titles_overview
+  id=3 Títulos adicionados por ano e gênero [echarts_timeseries_line] dataset=public.catalog_overview
+  id=4 Nota média da crítica por gênero e ano de entrada [echarts_timeseries_line] dataset=public.catalog_overview
+  id=5 Tamanho do catálogo e amostra com nota, por gênero [table] dataset=public.catalog_overview
+datasets:
+  id=1 titles_overview colunas=8 métricas: count_titles=MEASURE(count_titles), avg_rating=MEASURE(avg_rating), total_votes=MEASURE(total_votes)
+  id=2 catalog_overview colunas=10 métricas: count_catalog_titles=MEASURE(count_catalog_titles), count_titles=MEASURE(count_titles), avg_rating=MEASURE(avg_rating), total_votes=MEASURE(total_votes)
+
+### execução 1: docker compose run --rm --no-deps superset-bootstrap
+database: usando a existente (postgresql+psycopg2://cube:cubecubecube@cube:15432/cube)
+dataset titles_overview: usando o existente id=1
+dataset titles_overview: coluna interna removida (__user)
+dataset titles_overview: coluna interna removida (__cubeJoinField)
+dataset catalog_overview: usando o existente id=2
+dataset catalog_overview: coluna interna removida (__user)
+dataset catalog_overview: coluna interna removida (__cubeJoinField)
+dashboard: usando o existente id=1 (Camada semântica — títulos)
+chart: atualizado id=1 (Nota média por país)
+chart: atualizado id=2 (Medidas por tipo de título)
+dashboard: layout atualizado id=1 (Camada semântica — títulos)
+pronto: http://superset:8088/superset/dashboard/1/
+dashboard: usando o existente id=2 (Crescimento do catálogo por gênero)
+chart: atualizado id=3 (Títulos adicionados por ano e gênero)
+chart: atualizado id=4 (Nota média da crítica por gênero e ano de entrada)
+chart: atualizado id=5 (Tamanho do catálogo e amostra com nota, por gênero)
+dashboard: layout atualizado id=2 (Crescimento do catálogo por gênero)
+pronto: http://superset:8088/superset/dashboard/2/
+(login: admin)
+### execução 2: docker compose run --rm --no-deps superset-bootstrap
+database: usando a existente (postgresql+psycopg2://cube:cubecubecube@cube:15432/cube)
+dataset titles_overview: usando o existente id=1
+dataset titles_overview: coluna interna removida (__user)
+dataset titles_overview: coluna interna removida (__cubeJoinField)
+dataset catalog_overview: usando o existente id=2
+dataset catalog_overview: coluna interna removida (__user)
+dataset catalog_overview: coluna interna removida (__cubeJoinField)
+dashboard: usando o existente id=1 (Camada semântica — títulos)
+chart: atualizado id=1 (Nota média por país)
+chart: atualizado id=2 (Medidas por tipo de título)
+dashboard: layout atualizado id=1 (Camada semântica — títulos)
+pronto: http://superset:8088/superset/dashboard/1/
+dashboard: usando o existente id=2 (Crescimento do catálogo por gênero)
+chart: atualizado id=3 (Títulos adicionados por ano e gênero)
+chart: atualizado id=4 (Nota média da crítica por gênero e ano de entrada)
+chart: atualizado id=5 (Tamanho do catálogo e amostra com nota, por gênero)
+dashboard: layout atualizado id=2 (Crescimento do catálogo por gênero)
+pronto: http://superset:8088/superset/dashboard/2/
+(login: admin)
+
+## inventário depois das duas execuções
+dashboards:
+  id=1 Camada semântica — títulos
+  id=2 Crescimento do catálogo por gênero
+charts:
+  id=1 Nota média por país [echarts_timeseries_bar] dataset=public.titles_overview
+  id=2 Medidas por tipo de título [table] dataset=public.titles_overview
+  id=3 Títulos adicionados por ano e gênero [echarts_timeseries_line] dataset=public.catalog_overview
+  id=4 Nota média da crítica por gênero e ano de entrada [echarts_timeseries_line] dataset=public.catalog_overview
+  id=5 Tamanho do catálogo e amostra com nota, por gênero [table] dataset=public.catalog_overview
+datasets:
+  id=1 titles_overview colunas=8 métricas: count_titles=MEASURE(count_titles), avg_rating=MEASURE(avg_rating), total_votes=MEASURE(total_votes)
+  id=2 catalog_overview colunas=10 métricas: count_catalog_titles=MEASURE(count_catalog_titles), count_titles=MEASURE(count_titles), avg_rating=MEASURE(avg_rating), total_votes=MEASURE(total_votes)
+
+## diff inventário antes × depois
+(sem diferenças: nada duplicado, nada criado de novo)
+
+# Nota: a cada execução o dataset é sincronizado com o Cube (PUT /api/v1/dataset/<id>/refresh),
+# o que traz de volta as colunas internas __user/__cubeJoinField; o bootstrap as remove de novo.
+# O estado final é o mesmo. A sincronização é o que fez o titles_overview passar de 7 para 8
+# colunas (year_added, que entrou na Fase 2) sem nenhum clique.

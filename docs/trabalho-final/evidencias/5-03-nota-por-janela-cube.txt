@@ -1,0 +1,86 @@
+# Fase 5 · Nota média da crítica dos 10 gêneros que mais cresceram, por janela (SQL API do Cube)
+
+# 'com_nota' = MEASURE(count_titles): títulos com linha no fct_titles. Atenção: 155 dos 1813 têm
+# rating nulo ('tbd' no Metacritic) e entram nessa contagem, mas não na média (ver 5-04).
+
+# janela 2015-16
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT genre, MEASURE(count_catalog_titles) AS catalogo, MEASURE(count_titles) AS com_nota, round(MEASURE(avg_rating)::numeric, 3) AS nota FROM catalog_overview WHERE year_added BETWEEN 2015 AND 2016 AND genre IN ('International Movies', 'Dramas', 'Comedies', 'International TV Shows', 'Action & Adventure', 'Romantic Movies', 'Independent Movies', 'Children & Family Movies', 'TV Dramas', 'Thrillers') GROUP BY 1 ORDER BY 2 DESC"  (2026-11-16 20:25:01)
+          genre           | catalogo | com_nota | nota  
+--------------------------+----------+----------+-------
+ International Movies     |       92 |       20 | 6.464
+ International TV Shows   |       88 |        2 |   7.5
+ Dramas                   |       77 |       25 | 6.845
+ Comedies                 |       60 |       16 | 5.827
+ TV Dramas                |       51 |        2 |     6
+ Independent Movies       |       38 |       20 | 6.967
+ Children & Family Movies |       31 |        2 |   6.1
+ Action & Adventure       |       20 |        8 | 6.413
+ Thrillers                |       16 |        6 |   5.7
+ Romantic Movies          |        8 |        2 |  6.55
+(10 rows)
+
+
+
+# janela 2019-20
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT genre, MEASURE(count_catalog_titles) AS catalogo, MEASURE(count_titles) AS com_nota, round(MEASURE(avg_rating)::numeric, 3) AS nota FROM catalog_overview WHERE year_added BETWEEN 2019 AND 2020 AND genre IN ('International Movies', 'Dramas', 'Comedies', 'International TV Shows', 'Action & Adventure', 'Romantic Movies', 'Independent Movies', 'Children & Family Movies', 'TV Dramas', 'Thrillers') GROUP BY 1 ORDER BY 2 DESC"  (2026-11-16 20:25:09)
+          genre           | catalogo | com_nota | nota  
+--------------------------+----------+----------+-------
+ International Movies     |     1185 |      140 | 6.874
+ Dramas                   |     1099 |      380 | 6.848
+ Comedies                 |      836 |      271 | 6.437
+ International TV Shows   |      611 |       36 | 6.213
+ Action & Adventure       |      372 |      178 | 6.627
+ Independent Movies       |      349 |      154 | 6.803
+ TV Dramas                |      327 |       28 | 5.917
+ Romantic Movies          |      323 |       91 | 6.527
+ Children & Family Movies |      317 |       98 | 6.357
+ Thrillers                |      268 |      116 | 6.258
+(10 rows)
+
+
+
+# o catálogo inteiro, para comparar:
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT MEASURE(count_catalog_titles) AS catalogo, MEASURE(count_titles) AS com_nota, round(MEASURE(avg_rating)::numeric, 3) AS nota FROM catalog_overview WHERE year_added BETWEEN 2015 AND 2016"  (2026-11-16 20:25:13)
+ catalogo | com_nota | nota  
+----------+----------+-------
+      510 |       77 | 6.411
+(1 row)
+
+
+
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT MEASURE(count_catalog_titles) AS catalogo, MEASURE(count_titles) AS com_nota, round(MEASURE(avg_rating)::numeric, 3) AS nota FROM catalog_overview WHERE year_added BETWEEN 2019 AND 2020"  (2026-11-16 20:25:15)
+ catalogo | com_nota | nota  
+----------+----------+-------
+     3894 |      900 | 6.586
+(1 row)
+
+
+
+# ano a ano, os 3 que mais cresceram (o que o dashboard mostra):
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT genre, year_added, MEASURE(count_catalog_titles) AS catalogo, MEASURE(count_titles) AS com_nota, round(MEASURE(avg_rating)::numeric, 3) AS nota FROM catalog_overview WHERE year_added BETWEEN 2015 AND 2021 AND genre IN ('Dramas', 'International Movies', 'Comedies') GROUP BY 1, 2 ORDER BY 1, 2"  (2026-11-16 20:25:20)
+        genre         | year_added | catalogo | com_nota | nota  
+----------------------+------------+----------+----------+-------
+ Comedies             |       2015 |       12 |        2 |   5.7
+ Comedies             |       2016 |       48 |       14 | 5.846
+ Comedies             |       2017 |      177 |       43 | 6.531
+ Comedies             |       2018 |      295 |       43 | 6.664
+ Comedies             |       2019 |      420 |      140 | 6.516
+ Comedies             |       2020 |      416 |      131 | 6.355
+ Comedies             |       2021 |      299 |      111 | 6.557
+ Dramas               |       2015 |       12 |        3 |  7.25
+ Dramas               |       2016 |       65 |       22 |   6.8
+ Dramas               |       2017 |      293 |       74 | 6.508
+ Dramas               |       2018 |      530 |      120 | 6.667
+ Dramas               |       2019 |      564 |      200 | 6.942
+ Dramas               |       2020 |      535 |      180 | 6.738
+ Dramas               |       2021 |      412 |      159 | 6.776
+ International Movies |       2015 |       10 |        2 |   6.4
+ International Movies |       2016 |       82 |       18 | 6.469
+ International Movies |       2017 |      395 |       43 |   6.7
+ International Movies |       2018 |      666 |       67 | 6.665
+ International Movies |       2019 |      610 |       79 | 6.849
+ International Movies |       2020 |      575 |       61 | 6.913
+ International Movies |       2021 |      408 |       37 | 6.643
+(21 rows)
+
+

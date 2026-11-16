@@ -1,0 +1,60 @@
+# Fase 2 · REST /load: count_catalog_titles × year_added × genre (critério de pronto da fase)
+$ curl -sG http://localhost:4000/cubejs-api/v1/load --data-urlencode 'query={"measures":["catalog_overview.count_catalog_titles","catalog_overview.count_titles","catalog_overview.avg_rating"],"dimensions":["catalog_overview.year_added","catalog_overview.genre"],"filters":[{"member":"catalog_overview.year_added","operator":"gte","values":["2015"]},{"member":"catalog_overview.genre","operator":"equals","values":["International Movies","Dramas","Comedies"]}],"order":{"catalog_overview.genre":"asc","catalog_overview.year_added":"asc"}}'  (2026-11-16 18:39:42)
+genre                  year_added  catalogo  com_nota    nota
+Comedies                     2015        12         2   5.700
+Comedies                     2016        48        14   5.846
+Comedies                     2017       177        43   6.531
+Comedies                     2018       295        43   6.664
+Comedies                     2019       420       140   6.516
+Comedies                     2020       416       131   6.355
+Comedies                     2021       299       111   6.557
+Dramas                       2015        12         3   7.250
+Dramas                       2016        65        22   6.800
+Dramas                       2017       293        74   6.508
+Dramas                       2018       530       120   6.667
+Dramas                       2019       564       200   6.942
+Dramas                       2020       535       180   6.738
+Dramas                       2021       412       159   6.776
+International Movies         2015        10         2   6.400
+International Movies         2016        82        18   6.469
+International Movies         2017       395        43   6.700
+International Movies         2018       666        67   6.665
+International Movies         2019       610        79   6.849
+International Movies         2020       575        61   6.912
+International Movies         2021       408        37   6.643
+(21 linhas)
+
+# SQL que o Cube gera para essa consulta (/v1/sql): a medida do fato atravessa a ponte
+# por uma subconsulta de chaves (keys), e não por count(*) sobre o join.
+$ curl -sG http://localhost:4000/cubejs-api/v1/sql --data-urlencode 'query=...mesma consulta...'
+ WITH 
+cte_0 AS (  SELECT "catalog".added_year "catalog_overview__year_added", "title_genre".genre_key "catalog_overview__genre", COUNT(DISTINCT "catalog".title_key) "catalog__count_catalog_titles"  
+  FROM  refined.ml.fct_catalog  AS "catalog"
+  LEFT JOIN  refined.ml.bridge_title_genre  AS "title_genre" ON "catalog".title_key = "title_genre".title_key
+  WHERE ("catalog".added_year >= CAST(? AS DOUBLE)) AND ("title_genre".genre_key IN (?, ?, ?)) GROUP BY 1, 2),
+cte_1 AS (  SELECT "catalog".added_year "catalog_overview__year_added", "title_genre".genre_key "catalog_overview__genre", COUNT(DISTINCT "titles".title_key) "titles__count_titles"  
+  FROM  refined.ml.fct_catalog  AS "catalog"
+  LEFT JOIN  refined.ml.bridge_title_genre  AS "title_genre" ON "catalog".title_key = "title_genre".title_key
+  LEFT JOIN  refined.ml.fct_titles  AS "titles" ON "catalog".title_key = "titles".title_key
+  WHERE ("catalog".added_year >= CAST(? AS DOUBLE)) AND ("title_genre".genre_key IN (?, ?, ?)) GROUP BY 1, 2),
+cte_2 AS (  SELECT "keys"."catalog_overview__year_added" "catalog_overview__year_added", "keys"."catalog_overview__genre" "catalog_overview__genre", avg("titles_key_titles".rating) "titles__avg_rating"  
+  FROM (SELECT DISTINCT "titles_key_catalog".added_year "catalog_overview__year_added", "titles_key_title_genre".genre_key "catalog_overview__genre", "titles_key_titles".title_key "titles__title_key"  
+  FROM  refined.ml.fct_catalog  AS "titles_key_catalog"
+  LEFT JOIN  refined.ml.bridge_title_genre  AS "titles_key_title_genre" ON "titles_key_catalog".title_key = "titles_key_title_genre".title_key
+  LEFT JOIN  refined.ml.fct_titles  AS "titles_key_titles" ON "titles_key_catalog".title_key = "titles_key_titles".title_key
+  WHERE ("titles_key_catalog".added_year >= CAST(? AS DOUBLE)) AND ("titles_key_title_genre".genre_key IN (?, ?, ?))) AS "keys"
+  LEFT JOIN  refined.ml.fct_titles  AS "titles_key_titles" ON (("keys"."titles__title_key" = "titles_key_titles".title_key)) GROUP BY 1, 2)
+SELECT "fk_aggregate_keys"."catalog_overview__year_added" "catalog_overview__year_added", "fk_aggregate_keys"."catalog_overview__genre" "catalog_overview__genre", "q_0"."catalog__count_catalog_titles" "catalog_overview__count_catalog_titles", "q_1"."titles__count_titles" "catalog_overview__count_titles", "q_2"."titles__avg_rating" "catalog_overview__avg_rating"  
+FROM (SELECT DISTINCT "catalog_overview__year_added" "catalog_overview__year_added", "catalog_overview__genre" "catalog_overview__genre"  
+FROM (SELECT DISTINCT "catalog_overview__year_added" "catalog_overview__year_added", "catalog_overview__genre" "catalog_overview__genre"  
+FROM  cte_0  AS "cte_0"
+ UNION ALL 
+SELECT DISTINCT "catalog_overview__year_added" "catalog_overview__year_added", "catalog_overview__genre" "catalog_overview__genre"  
+FROM  cte_1  AS "cte_1"
+ UNION ALL 
+SELECT DISTINCT "catalog_overview__year_added" "catalog_overview__year_added", "catalog_overview__genre" "catalog_overview__genre"  
+FROM  cte_2  AS "cte_2") AS "fk_aggregate_keys_source") AS "fk_aggregate_keys"
+LEFT JOIN  cte_0  AS "q_0" ON (("fk_aggregate_keys"."catalog_overview__year_added" = "q_0"."catalog_overview__year_added" OR (("fk_aggregate_keys"."catalog_overview__year_added" IS NULL) AND ("q_0"."catalog_overview__year_added" IS NULL)))) AND (("fk_aggregate_keys"."catalog_overview__genre" = "q_0"."catalog_overview__genre" OR (("fk_aggregate_keys"."catalog_overview__genre" IS NULL) AND ("q_0"."catalog_overview__genre" IS NULL))))
+LEFT JOIN  cte_1  AS "q_1" ON (("fk_aggregate_keys"."catalog_overview__year_added" = "q_1"."catalog_overview__year_added" OR (("fk_aggregate_keys"."catalog_overview__year_added" IS NULL) AND ("q_1"."catalog_overview__year_added" IS NULL)))) AND (("fk_aggregate_keys"."catalog_overview__genre" = "q_1"."catalog_overview__genre" OR (("fk_aggregate_keys"."catalog_overview__genre" IS NULL) AND ("q_1"."catalog_overview__genre" IS NULL))))
+LEFT JOIN  cte_2  AS "q_2" ON (("fk_aggregate_keys"."catalog_overview__year_added" = "q_2"."catalog_overview__year_added" OR (("fk_aggregate_keys"."catalog_overview__year_added" IS NULL) AND ("q_2"."catalog_overview__year_added" IS NULL)))) AND (("fk_aggregate_keys"."catalog_overview__genre" = "q_2"."catalog_overview__genre" OR (("fk_aggregate_keys"."catalog_overview__genre" IS NULL) AND ("q_2"."catalog_overview__genre" IS NULL)))) ORDER BY  2  ASC,  1  ASC
+LIMIT 10000

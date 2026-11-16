@@ -1,0 +1,59 @@
+# Migração única: o pyiceberg não acrescenta coluna NOT NULL a tabela existente (ver 1-02-dlt-load-id-falha.txt),
+# então as 3 tabelas raw são recriadas. Os dados voltam dos CSVs do repo.
+$ trino --execute "DROP TABLE raw.raw_movies.netflix_titles"  (2026-11-13 18:01:59)
+DROP TABLE
+
+$ trino --execute "DROP TABLE raw.raw_movies.meta_critic"  (2026-11-13 18:02:01)
+DROP TABLE
+
+$ trino --execute "DROP TABLE raw.raw_movies.imdb_top_1000"  (2026-11-13 18:02:03)
+DROP TABLE
+
+$ make dlt-run DLT_TABLE=netflix_titles  (2026-11-13 18:02:05)
+Jobs: 2/2 (100.0%) | Time: 2.81s | Rate: 0.71/s
+Pipeline iceberg_filesystem_csv load step finished in 2.81 seconds
+1 load package(s) were loaded to destination filesystem and into dataset raw_movies
+The filesystem destination used s3://raw location to store data
+Load package 1794603733.6487935 is LOADED and contains no failed jobs
+Normalized data for the following tables:
+- netflix_titles: 8807 row(s)
+Load package 1794603733.6487935 is NORMALIZED and NOT YET LOADED to the destination and contains no failed jobs
+$ make dlt-run DLT_TABLE=meta_critic  (2026-11-13 18:02:17)
+Jobs: 2/2 (100.0%) | Time: 2.73s | Rate: 0.73/s
+Pipeline iceberg_filesystem_csv load step finished in 2.73 seconds
+1 load package(s) were loaded to destination filesystem and into dataset raw_movies
+The filesystem destination used s3://raw location to store data
+Load package 1794603744.4743855 is LOADED and contains no failed jobs
+Normalized data for the following tables:
+- meta_critic: 16290 row(s)
+Load package 1794603744.4743855 is NORMALIZED and NOT YET LOADED to the destination and contains no failed jobs
+$ make dlt-run DLT_TABLE=imdb_top_1000  (2026-11-13 18:02:28)
+Jobs: 2/2 (100.0%) | Time: 2.73s | Rate: 0.73/s
+Pipeline iceberg_filesystem_csv load step finished in 2.73 seconds
+1 load package(s) were loaded to destination filesystem and into dataset raw_movies
+The filesystem destination used s3://raw location to store data
+Load package 1794603755.7673066 is LOADED and contains no failed jobs
+Normalized data for the following tables:
+- imdb_top_1000: 1000 row(s)
+Load package 1794603755.7673066 is NORMALIZED and NOT YET LOADED to the destination and contains no failed jobs
+
+# Segunda carga da mesma tabela (replace) para confirmar que a coluna não quebra as próximas execuções:
+$ make dlt-run DLT_TABLE=netflix_titles  (2026-11-13 18:02:47)
+Normalized data for the following tables:
+- netflix_titles: 8807 row(s)
+Load package 1794603782.7222788 is NORMALIZED and NOT YET LOADED to the destination and contains no failed jobs
+
+$ trino --execute "show columns from raw.raw_movies.netflix_titles like '_dlt%'"  (2026-11-13 18:03:14)
+    Column    |  Type   | Extra | Comment 
+--------------+---------+-------+---------
+ _dlt_load_id | varchar |       |         
+(1 row)
+
+$ trino --execute "select 'netflix_titles' t, count(*) n, count(distinct _dlt_load_id) cargas, max(from_unixtime(cast(_dlt_load_id as double))) carregado_em from raw.raw_movies.netflix_titles union all select 'meta_critic', count(*), count(distinct _dlt_load_id), max(from_unixtime(cast(_dlt_load_id as double))) from raw.raw_movies.meta_critic union all select 'imdb_top_1000', count(*), count(distinct _dlt_load_id), max(from_unixtime(cast(_dlt_load_id as double))) from raw.raw_movies.imdb_top_1000"  (2026-11-13 18:03:16)
+       t        |   n   | cargas |        carregado_em         
+----------------+-------+--------+-----------------------------
+ imdb_top_1000  |  1000 |      1 | 2026-11-13 21:02:35.767 UTC 
+ netflix_titles |  8807 |      1 | 2026-11-13 21:03:02.722 UTC 
+ meta_critic    | 16290 |      1 | 2026-11-13 21:02:24.474 UTC 
+(3 rows)
+

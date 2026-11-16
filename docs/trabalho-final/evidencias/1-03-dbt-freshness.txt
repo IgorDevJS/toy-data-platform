@@ -1,0 +1,34 @@
+$ make dbt-freshness  (2026-11-13 18:04:56)
+docker build -t movies_transform dbt/
+
+
+
+
+
+
+docker run --rm \
+    -v /home/igor/Documentos/facul-pos/data-engineering/toy-data-platform/dbt/movies_transform:/usr/app/movies_transform \
+    --env-file /home/igor/Documentos/facul-pos/data-engineering/toy-data-platform/dbt/.env \
+    --network platform-net \
+    -w /usr/app/movies_transform \
+    movies_transform \
+    dbt source freshness --target-path target/prod
+21:04:59  Running with dbt=1.12.6
+INFO:trino.auth:keyring module not found. OAuth2 token will not be stored in keyring.
+INFO:trino.auth:keyring module not found. OAuth2 token will not be stored in keyring.
+21:05:00  Registered adapter: trino=1.10.6
+21:05:00  Found 12 models, 1 seed, 48 data tests, 1 snapshot, 2 sources, 500 macros
+21:05:00  
+21:05:00  Concurrency: 1 threads (target='prod')
+21:05:00  
+21:05:02  1 of 2 START freshness of raw.meta_critic ...................................... [RUN]
+21:05:02  1 of 2 PASS freshness of raw.meta_critic ....................................... [PASS in 0.15s]
+21:05:02  2 of 2 START freshness of raw.netflix_titles ................................... [RUN]
+21:05:02  2 of 2 PASS freshness of raw.netflix_titles .................................... [PASS in 0.17s]
+21:05:02  
+21:05:02  Finished running 2 sources in 0 hours 0 minutes and 1.57 seconds (1.57s).
+21:05:02  Done.
+
+# max_loaded_at gravado em target/prod/sources.json:
+source.movies_transform.raw.meta_critic pass 2026-11-13T21:02:24.474000+00:00 idade(s)=158
+source.movies_transform.raw.netflix_titles pass 2026-11-13T21:03:02.722000+00:00 idade(s)=120

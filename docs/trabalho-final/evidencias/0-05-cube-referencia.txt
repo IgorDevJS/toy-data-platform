@@ -1,0 +1,13 @@
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT title_type, MEASURE(count_titles) AS titulos, round(MEASURE(avg_rating)::numeric, 3) AS nota FROM titles_overview GROUP BY 1 ORDER BY 1"  (2026-11-13 17:19:01)
+ title_type | titulos | nota  
+------------+---------+-------
+ Movie      |    1673 | 6.627
+ TV Show    |     140 | 6.597
+(2 rows)
+
+$ psql -h cube -p 15432 -U cube -d cube -c "SELECT MEASURE(count_titles) AS titulos, round(MEASURE(avg_rating)::numeric, 3) AS nota, MEASURE(total_votes) AS votos FROM titles_overview"  (2026-11-13 17:19:05)
+ titulos | nota  | votos  
+---------+-------+--------
+    1813 | 6.625 | 322914
+(1 row)
+
