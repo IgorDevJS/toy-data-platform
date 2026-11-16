@@ -1,0 +1,6 @@
+# Artefatos de execução ficam fora da imagem (e alguns são do root, gerados pelo Makefile).
+movies_transform/target/
+movies_transform/logs/
+movies_transform/.user.yml
+.env
+.env.*
